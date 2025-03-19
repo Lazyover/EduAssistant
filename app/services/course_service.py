@@ -1,0 +1,96 @@
+from app.models.course import Course, StudentCourse
+from app.models.user import User
+
+class CourseService:
+    """课程服务类，处理课程管理和学生课程关联。
+    
+    该服务提供课程相关的所有功能，包括课程创建、修改、删除，
+    以及学生与课程之间的关联管理等。
+    """
+    
+    def create_course(self, name, code, description, teacher_id):
+        """创建新课程。
+        
+        Args:
+            name (str): 课程名称
+            code (str): 课程代码
+            description (str): 课程描述
+            teacher_id (int): 教师用户ID
+            
+        Returns:
+            Course: 创建的课程对象
+            
+        Raises:
+            ValueError: 如果课程代码已存在
+        """
+        if Course.select().where(Course.code == code).exists():
+            raise ValueError(f"课程代码 '{code}' 已存在")
+        
+        teacher = User.get_by_id(teacher_id)
+        return Course.create(
+            name=name,
+            code=code,
+            description=description,
+            teacher=teacher
+        )
+    
+    def enroll_student(self, course_id, student_id):
+        """将学生加入课程。
+        
+        Args:
+            course_id (int): 课程ID
+            student_id (int): 学生ID
+            
+        Returns:
+            StudentCourse: 创建的学生-课程关联对象
+            
+        Raises:
+            ValueError: 如果学生已加入该课程
+        """
+        if StudentCourse.select().where(
+            (StudentCourse.course_id == course_id) & 
+            (StudentCourse.student_id == student_id)
+        ).exists():
+            raise ValueError("学生已加入该课程")
+        
+        return StudentCourse.create(
+            course_id=course_id,
+            student_id=student_id
+        )
+    
+    def get_courses_by_teacher(self, teacher_id):
+        """获取教师所教授的所有课程。
+        
+        Args:
+            teacher_id (int): 教师用户ID
+            
+        Returns:
+            list: 课程对象列表
+        """
+        return list(Course.select().where(Course.teacher_id == teacher_id))
+    
+    def get_courses_by_student(self, student_id):
+        """获取学生所参与的所有课程。
+        
+        Args:
+            student_id (int): 学生用户ID
+            
+        Returns:
+            list: 课程对象列表
+        """
+        return list(Course.select()
+                   .join(StudentCourse)
+                   .where(StudentCourse.student_id == student_id))
+    
+    def get_students_by_course(self, course_id):
+        """获取参与课程的所有学生。
+        
+        Args:
+            course_id (int): 课程ID
+            
+        Returns:
+            list: 学生用户对象列表
+        """
+        return list(User.select()
+                   .join(StudentCourse)
+                   .where(StudentCourse.course_id == course_id))

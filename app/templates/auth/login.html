@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}登录 - 教学分析助手{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">用户登录</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('auth.login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" required>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">登录</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">还没有账号？ <a href="{{ url_for('auth.register') }}">立即注册</a></p>
+            </div>
+        </div>
+        
+        <!-- 系统初始化提示 -->
+        <div class="alert alert-info mt-4">
+            <h5 class="alert-heading">系统初始化</h5>
+            <p>如果这是第一次使用系统，请先 <a href="{{ url_for('admin.initialize_system') }}" class="alert-link">进行系统初始化</a>。</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

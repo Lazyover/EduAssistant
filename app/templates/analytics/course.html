@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}课程分析 - {{ course.name }} - 教学分析助手{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>课程学习分析</h2>
+        <p class="text-muted">{{ course.name }} ({{ course.code }})</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('course.view', course_id=course.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>返回课程
+        </a>
+    </div>
+</div>
+
+<!-- 课程统计数据卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h2 class="text-primary mb-0">{{ students|length }}</h2>
+                <p class="text-muted">学生人数</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h2 class="text-primary mb-0">{{ course.knowledge_points|length }}</h2>
+                <p class="text-muted">知识点数量</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h2 class="text-primary mb-0">{{ course.assignments|length }}</h2>
+                <p class="text-muted">作业数量</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h2 class="text-primary mb-0" id="totalActivityCount">--</h2>
+                <p class="text-muted">总活动次数</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- 学习活动热力图 -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>课程活跃度分析</h5>
+            </div>
+            <div class="card-body">
+                {% if students|length > 0 %}
+                <div class="chart-container">
+                    <canvas id="activityHeatmap"></canvas>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="mb-0 text-muted">暂无学生数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 学生知识点掌握情况 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-brain me-2"></i>学生知识点掌握概况</h5>
+            </div>
+            <div class="card-body">
+                {% if students|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>学生</th>
+                                <th>平均掌握度</th>
+                                <th>最近活动</th>
+                                <th>活动总数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>{{ student.name }}</td>
+                                <td>
+                                    {% if student.id in student_masteries and student_masteries[student.id]|length > 0 %}
+                                    {% set mastery_values = [] %}
+                                    {% for point_id, point_data in student_masteries[student.id].items() %}
+                                        {% if mastery_values.append(point_data.mastery_level) %}{% endif %}
+                                    {% endfor %}
+                                    {% set avg_mastery = (mastery_values|sum / mastery_values|length) %}
+                                    <div class="progress {% if avg_mastery < 0.4 %}progress-low{% elif avg_mastery < 0.7 %}progress-medium{% else %}progress-high{% endif %}" style="height: 20px;">
+                                        <div class="progress-bar" role="progressbar" style="width: {{ avg_mastery*100 }}%">
+                                            {{ "%.0f"|format(avg_mastery*100) }}%
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">无数据</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if student.id in course_activity and course_activity[student.id].total_activities > 0 %}
+                                    {% set daily_keys = course_activity[student.id].daily_activities.keys()|list %}
+                                    {% if daily_keys %}
+                                    {{ daily_keys[-1] }}
+                                    {% else %}
+                                    <span class="text-muted">无数据</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">无数据</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if student.id in course_activity %}
+                                    {{ course_activity[student.id].total_activities }}
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('analytics.student_analytics', student_id=student.id, course_id=course.id) }}" class="btn btn-sm btn-outline-primary">
+                                        详细分析
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="mb-0 text-muted">该课程暂无学生</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 计算总活动数
+    let totalActivities = 0;
+    {% for student in students %}
+        {% if student.id in course_activity %}
+            totalActivities += {{ course_activity[student.id].total_activities }};
+        {% endif %}
+    {% endfor %}
+    document.getElementById('totalActivityCount').innerText = totalActivities;
+    
+    {% if students|length > 0 %}
+    // 准备活动热力图数据
+    const ctx = document.getElementById('activityHeatmap').getContext('2d');
+    const studentNames = [];
+    const activityData = [];
+    
+    {% for student in students %}
+        studentNames.push("{{ student.name }}");
+        {% if student.id in course_activity and course_activity[student.id].total_activities > 0 %}
+            activityData.push({{ course_activity[student.id].total_activities }});
+        {% else %}
+            activityData.push(0);
+        {% endif %}
+    {% endfor %}
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: studentNames,
+            datasets: [{
+                label: '学习活动次数',
+                data: activityData,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '活动次数'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '学生'
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

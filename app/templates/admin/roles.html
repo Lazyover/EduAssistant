@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}角色管理 - 教学分析助手{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>角色管理</h2>
+        <p class="text-muted">管理系统角色和权限</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('admin.add_role') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>添加角色
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>角色名称</th>
+                        <th>描述</th>
+                        <th>用户数量</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in roles %}
+                    <tr>
+                        <td>{{ role.id }}</td>
+                        <td>{{ role.name }}</td>
+                        <td>{{ role.description }}</td>
+                        <td>{{ role.users|length }}</td>
+                        <td>{{ role.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoleModal-{{ role.id }}">编辑</button>
+                                <button type="button" class="btn btn-outline-danger" {% if role.users|length > 0 %}disabled title="有用户使用此角色，无法删除"{% else %}data-bs-toggle="modal" data-bs-target="#deleteRoleModal-{{ role.id }}"{% endif %}>删除</button>
+                            </div>
+                            
+                            <!-- 编辑角色弹窗 -->
+                            <div class="modal fade" id="editRoleModal-{{ role.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">编辑角色</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form id="editRoleForm-{{ role.id }}">
+                                                <div class="mb-3">
+                                                    <label for="name-{{ role.id }}" class="form-label">角色名称</label>
+                                                    <input type="text" class="form-control" id="name-{{ role.id }}" name="name" value="{{ role.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="description-{{ role.id }}" class="form-label">描述</label>
+                                                    <textarea class="form-control" id="description-{{ role.id }}" name="description" rows="3" required>{{ role.description }}</textarea>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                            <button type="button" class="btn btn-primary">保存更改</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 删除角色确认弹窗 -->
+                            <div class="modal fade" id="deleteRoleModal-{{ role.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">确认删除</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>确定要删除角色 "{{ role.name }}" 吗？</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                            <button type="button" class="btn btn-danger">确认删除</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

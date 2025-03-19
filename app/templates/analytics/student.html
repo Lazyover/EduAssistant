@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}学生分析 - {{ student.name }} - 教学分析助手{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>学生学习分析</h2>
+        <p class="text-muted">{{ student.name }} - {{ student.username }}</p>
+    </div>
+    <div class="col-auto">
+        <!-- 课程选择器 -->
+        <form id="courseSelectForm" class="d-flex">
+            <label for="courseSelect" class="form-label me-2 mt-2">课程:</label>
+            <select class="form-select" id="courseSelect" name="course_id">
+                <option value="">全部课程</option>
+                {% for course in courses %}
+                <option value="{{ course.id }}" {% if course.id == selected_course_id %}selected{% endif %}>
+                    {{ course.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+<!-- 学习问题预警 -->
+{% if learning_issues and learning_issues.has_issues %}
+<div class="alert alert-warning mb-4">
+    <h5><i class="fas fa-exclamation-triangle me-2"></i>学习预警</h5>
+    <ul class="mb-0">
+        {% for issue in learning_issues.issues %}
+        <li>
+            {{ issue.message }}
+            {% if issue.type == 'low_mastery' and issue.details %}
+            <ul>
+                {% for point in issue.details[:3] %}
+                <li>{{ point.name }} (掌握度: {{ "%.0f"|format(point.level*100) }}%)</li>
+                {% endfor %}
+                {% if issue.details|length > 3 %}
+                <li>...以及其他 {{ issue.details|length - 3 }} 个知识点</li>
+                {% endif %}
+            </ul>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <!-- 学习活动图表 -->
+    <div class="col-md-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>学习活动趋势</h5>
+            </div>
+            <div class="card-body">
+                {% if activity_summary and activity_summary.total_activities > 0 %}
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="mb-0 text-muted">暂无学习活动数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 活动统计 -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>活动统计</h5>
+            </div>
+            <div class="card-body">
+                {% if activity_summary and activity_summary.total_activities > 0 %}
+                <div class="mb-4">
+                    <h6>总活动次数</h6>
+                    <h2 class="text-primary">{{ activity_summary.total_activities }}</h2>
+                </div>
+                <div class="mb-4">
+                    <h6>总学习时间</h6>
+                    <h2 class="text-primary">{{ (activity_summary.total_duration / 60)|int }} 分钟</h2>
+                </div>
+                {% if activity_summary.activity_types %}
+                <h6>活动类型分布</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>活动类型</th>
+                                <th>次数</th>
+                                <th>时间(分钟)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for type_name, data in activity_summary.activity_types.items() %}
+                            <tr>
+                                <td>{{ type_name }}</td>
+                                <td>{{ data.count }}</td>
+                                <td>{{ (data.duration / 60)|int }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="mb-0 text-muted">暂无学习活动数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 知识点掌握情况 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-brain me-2"></i>知识点掌握情况</h5>
+            </div>
+            <div class="card-body">
+                {% if knowledge_mastery %}
+                <div class="row">
+                    {% for point_id, data in knowledge_mastery.items() %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0">
+                            <div class="card-body">
+                                <h6>{{ data.knowledge_point_name }}</h6>
+                                <div class="progress {% if data.mastery_level < 0.4 %}progress-low{% elif data.mastery_level < 0.7 %}progress-medium{% else %}progress-high{% endif %} mb-2">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ data.mastery_level*100 }}%"
+                                        aria-valuenow="{{ data.mastery_level*100 }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ "%.0f"|format(data.mastery_level*100) }}%
+                                    </div>
+                                </div>
+                                {% if data.last_interaction %}
+                                <small class="text-muted">最近学习: {{ data.last_interaction.strftime('%Y-%m-%d') }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="mb-0 text-muted">暂无知识点掌握数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // 课程选择器自动提交
+    document.getElementById('courseSelect').addEventListener('change', function() {
+        document.getElementById('courseSelectForm').submit();
+    });
+    
+    {% if activity_summary and activity_summary.daily_activities %}
+    // 学习活动趋势图表
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        
+        // 准备数据
+        const dailyActivities = {{ activity_summary.daily_activities|tojson }};
+        const dates = Object.keys(dailyActivities).sort();
+        const activityCounts = dates.map(date => dailyActivities[date].count);
+        const activityDurations = dates.map(date => Math.round(dailyActivities[date].duration / 60)); // 转换为分钟
+        
+        // 创建图表
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: '活动次数',
+                        data: activityCounts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '学习时长(分钟)',
+                        data: activityDurations,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '活动次数'
+                        },
+                        position: 'left'
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '学习时长(分钟)'
+                        },
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}

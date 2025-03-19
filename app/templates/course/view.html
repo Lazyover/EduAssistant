@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.name }} - 教学分析助手{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>{{ course.name }}</h2>
+        <p class="text-muted">课程代码: {{ course.code }}</p>
+    </div>
+    <div class="col-auto">
+        {% if is_teacher %}
+        <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>创建作业
+        </a>
+        <a href="{{ url_for('analytics.course_analytics', course_id=course.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-chart-line me-1"></i>课程分析
+        </a>
+        {% endif %}
+        
+        {% if not is_student and not is_teacher %}
+        <a href="{{ url_for('course.enroll', course_id=course.id) }}" class="btn btn-success">
+            <i class="fas fa-user-plus me-1"></i>加入课程
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- 课程信息 -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>课程详情</h5>
+            </div>
+            <div class="card-body">
+                <p>{{ course.description }}</p>
+                <hr>
+                <p><strong>教师:</strong> {{ course.teacher.name }}</p>
+                {% if is_student %}
+                <div class="alert alert-success mt-3">
+                    <i class="fas fa-check-circle me-2"></i>您已加入该课程
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 作业列表 -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>作业</h5>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th>截止日期</th>
+                                <th>总分</th>
+                                {% if is_student %}
+                                <th>状态</th>
+                                {% endif %}
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td>{{ assignment.title }}</td>
+                                <td>{{ assignment.due_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ assignment.total_points }}</td>
+                                {% if is_student %}
+                                    {% set student_assignment = student_assignments|selectattr('assignment.id', 'equalto', assignment.id)|first %}
+                                    <td>
+                                        {% if student_assignment and student_assignment.completed %}
+                                        <span class="badge bg-success">已完成</span>
+                                        {% elif student_assignment and student_assignment.submitted_at %}
+                                        <span class="badge bg-warning">已提交</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">未提交</span>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                                <td>
+                                    <a href="{{ url_for('course.view_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center py-4">该课程暂无作业</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- 学生列表 (仅教师可见) -->
+        {% if is_teacher and students %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>学生 ({{ students|length }})</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                {% for student in students %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ student.name }}
+                        <a href="{{ url_for('analytics.student_analytics', student_id=student.id, course_id=course.id) }}" class="btn btn-sm btn-outline-primary">查看分析</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 相关知识库 -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-search me-2"></i>知识库查询</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('search.index') }}" method="get">
+                    <input type="hidden" name="course_id" value="{{ course.id }}">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="搜索课程相关知识...">
+                        <button class="btn btn-primary" type="submit">查询</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
