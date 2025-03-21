@@ -98,10 +98,10 @@ def initialize_system():
             Role.create(name=role_name, description=description)
             
         # 创建管理员账户
-        admin_username = request.form.get('admin_username')
-        admin_password = request.form.get('admin_password')
-        admin_email = request.form.get('admin_email')
-        admin_name = request.form.get('admin_name')
+        admin_username = request.form.get('admin_username', 'root')
+        admin_password = request.form.get('admin_password', '123456')
+        admin_email = request.form.get('admin_email', 'admin@example.com')
+        admin_name = request.form.get('admin_name', 'root')
         
         try:
             admin_user = user_service.create_user(

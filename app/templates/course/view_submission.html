@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student.name }} 的作业详情 - 教学分析助手{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>{{ assignment.title }}</h2>
+        <p class="text-muted">{{ student.name }} 的作业提交</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('course.view_assignment', assignment_id=assignment.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>返回作业列表
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>学生作业内容</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4 assignment-content">
+                    {{ submission.answer|safe }}
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>提交时间:</strong> {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>状态:</strong> 
+                            {% if submission.completed %}
+                            <span class="badge bg-success">已评分</span>
+                            {% else %}
+                            <span class="badge bg-warning">待评分</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>评分</h5>
+            </div>
+            <div class="card-body">
+                {% if submission.completed %}
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-award me-2"></i>已评分</h5>
+                    <p class="mb-0"><strong>得分:</strong> {{ submission.score }} / {{ assignment.total_points }}</p>
+                </div>
+                
+                <form method="post" action="{{ url_for('course.grade_assignment', assignment_id=assignment.id, student_id=student.id) }}">
+                    <div class="mb-3">
+                        <label for="score" class="form-label">修改分数</label>
+                        <div class="input-group">
+                            <input type="number" id="score" name="score" class="form-control" min="0" max="{{ assignment.total_points }}" step="0.5" value="{{ submission.score }}" required>
+                            <span class="input-group-text">/ {{ assignment.total_points }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="feedback" class="form-label">教师反馈</label>
+                        <textarea id="feedback" name="feedback" class="form-control" rows="4">{{ submission.feedback }}</textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">更新评分</button>
+                    </div>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('course.grade_assignment', assignment_id=assignment.id, student_id=student.id) }}">
+                    <div class="mb-3">
+                        <label for="score" class="form-label">评分</label>
+                        <div class="input-group">
+                            <input type="number" id="score" name="score" class="form-control" min="0" max="{{ assignment.total_points }}" step="0.5" required>
+                            <span class="input-group-text">/ {{ assignment.total_points }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="feedback" class="form-label">教师反馈</label>
+                        <textarea id="feedback" name="feedback" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">提交评分</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

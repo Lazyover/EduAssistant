@@ -13,14 +13,11 @@
         <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i>创建作业
         </a>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addKnowledgePointModal">
+            <i class="fas fa-lightbulb me-1"></i>新增知识点
+        </button>
         <a href="{{ url_for('analytics.course_analytics', course_id=course.id) }}" class="btn btn-outline-primary">
             <i class="fas fa-chart-line me-1"></i>课程分析
-        </a>
-        {% endif %}
-        
-        {% if not is_student and not is_teacher %}
-        <a href="{{ url_for('course.enroll', course_id=course.id) }}" class="btn btn-success">
-            <i class="fas fa-user-plus me-1"></i>加入课程
         </a>
         {% endif %}
     </div>
@@ -40,10 +37,71 @@
                 {% if is_student %}
                 <div class="alert alert-success mt-3">
                     <i class="fas fa-check-circle me-2"></i>您已加入该课程
+                    <form action="{{ url_for('course.unenroll', course_id=course.id) }}" method="post" style="display: inline-block; float: right;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                            onclick="return confirm('确定要退出此课程吗？这可能会影响您的作业和成绩记录。')">
+                            <i class="fas fa-user-minus me-1"></i>退出课程
+                        </button>
+                    </form>
+                </div>
+                {% elif not is_teacher %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>您尚未加入该课程
+                    <form action="{{ url_for('course.enroll', course_id=course.id) }}" method="post" style="display: inline-block; float: right;">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="fas fa-user-plus me-1"></i>加入课程
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
             </div>
         </div>
+        
+        <!-- 知识点列表 (仅教师可见) -->
+        {% if is_teacher %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>知识点</h5>
+            </div>
+            <div class="card-body">
+                {% if knowledge_points %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>描述</th>
+                                <th>所属</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for kp in knowledge_points %}
+                            <tr>
+                                <td>{{ kp.name }}</td>
+                                <td>{{ kp.description|truncate(50) }}</td>
+                                <td>{% if kp.parent %}{{ kp.parent.name }}{% else %}<span class="text-muted">顶级</span>{% endif %}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            onclick="editKnowledgePoint({{ kp.id }}, '{{ kp.name }}', '{{ kp.description }}', {% if kp.parent %}{{ kp.parent.id }}{% else %}null{% endif %})">
+                                        编辑
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="deleteKnowledgePoint({{ kp.id }}, '{{ kp.name }}')">
+                                        删除
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center py-4">该课程暂无知识点，请使用上方"新增知识点"按钮添加</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
         
         <!-- 作业列表 -->
         <div class="card shadow-sm mb-4">
@@ -135,4 +193,145 @@
         </div>
     </div>
 </div>
+
+<!-- 新增知识点模态框 -->
+{% if is_teacher %}
+<div class="modal fade" id="addKnowledgePointModal" tabindex="-1" aria-labelledby="addKnowledgePointModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addKnowledgePointModalLabel">新增知识点</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addKnowledgePointForm" action="{{ url_for('course.add_knowledge_point', course_id=course.id) }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="kp_name" class="form-label">知识点名称</label>
+                        <input type="text" class="form-control" id="kp_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kp_description" class="form-label">描述</label>
+                        <textarea class="form-control" id="kp_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kp_parent" class="form-label">父级知识点（可选）</label>
+                        <select class="form-select" id="kp_parent" name="parent_id">
+                            <option value="">-- 无父级（顶级知识点）--</option>
+                            {% for kp in knowledge_points %}
+                            <option value="{{ kp.id }}">{{ kp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑知识点模态框 -->
+<div class="modal fade" id="editKnowledgePointModal" tabindex="-1" aria-labelledby="editKnowledgePointModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editKnowledgePointModalLabel">编辑知识点</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editKnowledgePointForm" action="" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_kp_id" name="knowledge_point_id">
+                    <div class="mb-3">
+                        <label for="edit_kp_name" class="form-label">知识点名称</label>
+                        <input type="text" class="form-control" id="edit_kp_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_kp_description" class="form-label">描述</label>
+                        <textarea class="form-control" id="edit_kp_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_kp_parent" class="form-label">父级知识点（可选）</label>
+                        <select class="form-select" id="edit_kp_parent" name="parent_id">
+                            <option value="">-- 无父级（顶级知识点）--</option>
+                            {% for kp in knowledge_points %}
+                            <option value="{{ kp.id }}">{{ kp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">更新</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 删除知识点确认模态框 -->
+<div class="modal fade" id="deleteKnowledgePointModal" tabindex="-1" aria-labelledby="deleteKnowledgePointModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteKnowledgePointModalLabel">删除知识点</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除知识点 "<span id="delete_kp_name"></span>" 吗？</p>
+                <p class="text-danger">注意：这将删除与该知识点的所有关联。如果它有子知识点，将无法删除。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteKnowledgePointForm" action="" method="post">
+                    <input type="hidden" id="delete_kp_id" name="knowledge_point_id">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editKnowledgePoint(id, name, description, parentId) {
+        document.getElementById('edit_kp_id').value = id;
+        document.getElementById('edit_kp_name').value = name;
+        document.getElementById('edit_kp_description').value = description;
+        
+        const parentSelect = document.getElementById('edit_kp_parent');
+        if (parentId) {
+            for (let i = 0; i < parentSelect.options.length; i++) {
+                if (parentSelect.options[i].value == parentId) {
+                    parentSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        } else {
+            parentSelect.selectedIndex = 0;
+        }
+        
+        document.getElementById('editKnowledgePointForm').action = 
+            "{{ url_for('course.edit_knowledge_point', course_id=course.id) }}";
+        
+        // 禁用与当前知识点相同的选项和子知识点选项
+        for (let i = 0; i < parentSelect.options.length; i++) {
+            parentSelect.options[i].disabled = (parentSelect.options[i].value == id);
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('editKnowledgePointModal'));
+        modal.show();
+    }
+    
+    function deleteKnowledgePoint(id, name) {
+        document.getElementById('delete_kp_id').value = id;
+        document.getElementById('delete_kp_name').textContent = name;
+        document.getElementById('deleteKnowledgePointForm').action = 
+            "{{ url_for('course.delete_knowledge_point', course_id=course.id) }}";
+        
+        const modal = new bootstrap.Modal(document.getElementById('deleteKnowledgePointModal'));
+        modal.show();
+    }
+</script>
+{% endif %}
 {% endblock %}

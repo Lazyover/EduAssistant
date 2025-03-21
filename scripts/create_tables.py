@@ -1,10 +1,10 @@
 from app.models.base import db
 
-from app.models.user import User, Role, UserRole
-from app.models.course import Course, StudentCourse
-from app.models.assignment import Assignment, StudentAssignment
-from app.models.learning_data import LearningActivity, KnowledgePoint, StudentKnowledgePoint
-from app.models.knowledge_base import KnowledgeBase
+from app.models.user import *
+from app.models.course import *
+from app.models.assignment import *
+from app.models.learning_data import *
+from app.models.knowledge_base import *
 
 from app import create_app
 
@@ -14,9 +14,12 @@ tables = [
             User, Role, UserRole,
             Course, StudentCourse,
             Assignment, StudentAssignment,
-            LearningActivity, KnowledgePoint, StudentKnowledgePoint,
+            LearningActivity, KnowledgePoint, StudentKnowledgePoint, AssignmentKnowledgePoint, KnowledgeBaseKnowledgePoint,
             KnowledgeBase
         ]
 
-db.drop_tables(tables)
-db.create_tables(tables)
+#db.drop_tables(tables)
+#db.create_tables(tables)
+#db.drop_tables([StudentAssignment])
+#db.create_tables([StudentAssignment])
+db.create_tables([AssignmentKnowledgePoint, KnowledgeBaseKnowledgePoint])

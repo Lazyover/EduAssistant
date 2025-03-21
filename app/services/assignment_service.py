@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from app.models.assignment import Assignment, StudentAssignment
 from app.models.course import Course, StudentCourse
 
@@ -31,6 +32,19 @@ class AssignmentService:
             total_points=total_points
         )
     
+    def get_assignment_by_id(self, assignment_id):
+        """获取作业详情
+        Args:
+            assignment_id (int): Assignment对象ID
+
+        Returns:
+            Assignment: 作业对象
+
+        Raises:
+            DoesNotExist: 如果作业不存在
+        """
+        return Assignment.get_by_id(assignment_id)
+    
     def assign_to_students(self, assignment_id):
         """将作业分配给所有选课学生。
         
@@ -58,7 +72,7 @@ class AssignmentService:
         
         return created
     
-    def submit_assignment(self, student_id, assignment_id, score=None):
+    def submit_assignment(self, student_id, assignment_id, answer):
         """提交或评分作业。
         
         Args:
@@ -69,24 +83,44 @@ class AssignmentService:
         Returns:
             StudentAssignment: 更新后的学生作业对象
             
-        Raises:
-            ValueError: 如果找不到对应的学生作业记录
         """
-        student_assignment = StudentAssignment.get_or_none(
-            StudentAssignment.student_id == student_id,
-            StudentAssignment.assignment_id == assignment_id
+        #student_assignment = StudentAssignment.get_or_none(
+        student_assignment, created = StudentAssignment.get_or_create(
+            student = student_id,
+            assignment = assignment_id
         )
         
-        if not student_assignment:
-            raise ValueError("无法找到对应的学生作业记录")
+        #if not student_assignment:
+        #    raise ValueError("无法找到对应的学生作业记录")
         
+        student_assignment.answer = answer
         student_assignment.submitted_at = datetime.now()
         student_assignment.attempts += 1
-        
-        if score is not None:
-            student_assignment.score = score
-            student_assignment.completed = True
             
+        student_assignment.save()
+        return student_assignment
+    
+    def grade_assignment(self, student_id: int, assignment_id: int, score: float, feedback: str = Optional[str]):
+        """为作业评分
+
+        Args:
+            assignment_id (int): Assignment对象ID
+            score (float): 评分
+            feedback: 反馈
+        
+        Returns:
+            StudentAssignment: 更新后的学生作业对象
+
+        Raises:
+            DoesNotExist: 如果找不到对应的作业对象
+        """
+        student_assignment = StudentAssignment.get(
+            StudentAssignment.student==student_id,
+            StudentAssignment.assignment==assignment_id
+        )
+        student_assignment.score = score
+        student_assignment.feedback = feedback
+        student_assignment.completed = True
         student_assignment.save()
         return student_assignment
     

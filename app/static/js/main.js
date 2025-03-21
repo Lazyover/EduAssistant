@@ -115,14 +115,14 @@ function recordLearningActivity() {
     window.addEventListener('beforeunload', submitActivity);
     
     // 页面可见性变化时处理（如切换标签）
-    document.addEventListener('visibilitychange', () => {
+    /*document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             submitActivity();
         } else {
             // 重新开始计时
             startTime = new Date();
         }
-    });
+    });*/
 }
 
 /**

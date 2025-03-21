@@ -1,4 +1,5 @@
 from app.models.course import Course, StudentCourse
+from app.models.assignment import *
 from app.models.user import User
 
 class CourseService:
@@ -53,10 +54,45 @@ class CourseService:
         ).exists():
             raise ValueError("学生已加入该课程")
         
+        student = User.get_by_id(student_id)
+        course = Course.get_by_id(course_id)
+        for assignment in course.assignments:
+            StudentAssignment.create(
+                student=student,
+                assignment=assignment
+            ).save()
+
         return StudentCourse.create(
             course_id=course_id,
             student_id=student_id
         )
+    
+    def unenroll_student(self, course_id, student_id):
+        """将学生从课程删除。
+        
+        Args:
+            course_id (int): 课程ID
+            student_id (int): 学生ID
+            
+        Returns:
+            bool: 是否成功删除
+            
+        Raises:
+            DoesNotExist: 如果学生没有加入课程
+        """
+        student_course = StudentCourse.select().where(
+            (StudentCourse.course_id == course_id) & 
+            (StudentCourse.student_id == student_id)
+        ).get()
+        return student_course.delete_instance()
+
+    def get_all_courses(self):
+        """获取所有的课程
+
+        Returns:
+            list: 课程对象列表
+        """
+        return list(Course.select())
     
     def get_courses_by_teacher(self, teacher_id):
         """获取教师所教授的所有课程。

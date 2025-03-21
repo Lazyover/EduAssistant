@@ -3,6 +3,8 @@ from playhouse.postgres_ext import JSONField
 from app.models.base import BaseModel
 from app.models.user import User
 from app.models.course import Course
+from app.models.assignment import Assignment
+from app.models.knowledge_base import KnowledgeBase
 
 class KnowledgePoint(BaseModel):
     name = CharField(max_length=100)
@@ -32,3 +34,23 @@ class LearningActivity(BaseModel):
     duration = IntegerField(default=0)  # 活动持续时间（秒）
     timestamp = DateTimeField()
     metadata = JSONField(null=True)  # 存储额外数据，如页面访问路径、交互细节等
+
+class AssignmentKnowledgePoint(BaseModel):
+    assignment = ForeignKeyField(Assignment, backref='knowledge_points')
+    knowledge_point = ForeignKeyField(KnowledgePoint, backref='related_assignments')
+    weight = FloatField(default=1.0)
+
+    class Meta:
+        indexes = (
+            (('assignment', 'knowledge_point'), True),
+        )
+
+class KnowledgeBaseKnowledgePoint(BaseModel):
+    knowledge_base = ForeignKeyField(KnowledgeBase, backref='knowledge_points')
+    knowledge_point = ForeignKeyField(KnowledgePoint, backref='related_knowledge_bases')
+    weight = FloatField(default=1.0)
+
+    class Meta:
+        indexes = (
+            (('knowledge_base', 'knowledge_point'), True),
+        )

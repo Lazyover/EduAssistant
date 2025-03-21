@@ -16,6 +16,8 @@ class Assignment(BaseModel):
 class StudentAssignment(BaseModel):
     student = ForeignKeyField(User, backref='assignments')
     assignment = ForeignKeyField(Assignment, backref='submissions')
+    answer = TextField(null=True)
+    feedback = TextField(null=True)
     score = FloatField(null=True)
     submitted_at = DateTimeField(null=True)
     attempts = IntegerField(default=0)

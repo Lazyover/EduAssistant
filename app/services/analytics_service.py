@@ -26,7 +26,7 @@ class AnalyticsService:
         Returns:
             LearningActivity: 创建的学习活动记录
         """
-        return LearningActivity.create(
+        leanring_activity = LearningActivity.create(
             student_id=student_id,
             course_id=course_id,
             activity_type=activity_type,
@@ -35,6 +35,8 @@ class AnalyticsService:
             timestamp=datetime.now(),
             metadata=metadata
         )
+        leanring_activity.save()
+        return leanring_activity
     
     def update_knowledge_mastery(self, student_id, knowledge_point_id, score_change):
         """更新知识点掌握度。

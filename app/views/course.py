@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from app.services.course_service import CourseService
 from app.services.assignment_service import AssignmentService
 from app.services.user_service import UserService
+from app.services.knowledge_point_service import KnowledgePointService
 from app.models.user import User
 from app.models.course import Course
 from datetime import datetime
@@ -10,6 +11,7 @@ course_bp = Blueprint('course', __name__, url_prefix='/course')
 course_service = CourseService()
 assignment_service = AssignmentService()
 user_service = UserService()
+knowledge_point_service = KnowledgePointService()
 
 @course_bp.route('/')
 def index():
@@ -22,7 +24,8 @@ def index():
     if user_service.has_role(user, 'teacher'):
         courses = course_service.get_courses_by_teacher(user_id)
     else:
-        courses = course_service.get_courses_by_student(user_id)
+        #courses = course_service.get_courses_by_student(user_id)
+        courses = course_service.get_all_courses()
         
     return render_template('course/index.html', courses=courses)
 
@@ -75,12 +78,15 @@ def view(course_id):
         if course_id in [c.id for c in student_courses]:
             is_student = True
     
-    if not (is_teacher or is_student):
+    '''if not (is_teacher or is_student):
         flash('您没有访问该课程的权限。', 'warning')
-        return redirect(url_for('course.index'))
+        return redirect(url_for('course.index'))'''
     
     # 获取课程作业
     assignments = assignment_service.get_course_assignments(course_id)
+    
+    # 获取课程知识点
+    knowledge_points = knowledge_point_service.get_course_knowledge_points(course_id)
     
     # 如果是教师，获取学生列表
     students = None
@@ -98,7 +104,8 @@ def view(course_id):
                          is_student=is_student,
                          assignments=assignments,
                          students=students,
-                         student_assignments=student_assignments)
+                         student_assignments=student_assignments,
+                         knowledge_points=knowledge_points)
 
 @course_bp.route('/<int:course_id>/enroll', methods=['GET', 'POST'])
 def enroll(course_id):
@@ -124,6 +131,24 @@ def enroll(course_id):
         return redirect(url_for('course.view', course_id=course_id))
     
     return render_template('course/enroll.html', course=course)
+
+@course_bp.route('/unenroll/<int:course_id>', methods=['POST'])
+def unenroll(course_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    # 检查用户是否已加入该课程
+    user_id = session['user_id']
+    try:
+        if course_service.unenroll_student(course_id, user_id):
+            flash(f'您已成功退出课程', 'success')
+        else:
+            flash(f'退出课程失败', 'warning')
+    except Exception as e:
+        flash(str(e), 'warning')
+    
+    return redirect(url_for('course.view', course_id=course_id))
+
 
 @course_bp.route('/<int:course_id>/assignment/create', methods=['GET', 'POST'])
 def create_assignment(course_id):
@@ -179,10 +204,9 @@ def view_assignment(assignment_id):
             StudentAssignment.student_id == user_id,
             StudentAssignment.assignment_id == assignment_id
         )
-        
-        if not student_assignment:
+        '''if not student_assignment:
             flash('您没有访问该作业的权限。', 'warning')
-            return redirect(url_for('course.index'))
+            return redirect(url_for('course.index'))'''
     
     # 如果是教师，获取所有学生提交情况
     submissions = None
@@ -191,11 +215,15 @@ def view_assignment(assignment_id):
             StudentAssignment.assignment_id == assignment_id
         )
     
+    # 获取作业关联的知识点
+    knowledge_points = knowledge_point_service.get_assignment_knowledge_points(assignment_id)
+    
     return render_template('course/view_assignment.html',
                          assignment=assignment,
                          is_teacher=is_teacher,
                          student_assignment=student_assignment,
-                         submissions=submissions)
+                         submissions=submissions,
+                         knowledge_points=knowledge_points)
 
 @course_bp.route('/assignment/<int:assignment_id>/submit', methods=['POST'])
 def submit_assignment(assignment_id):
@@ -203,14 +231,33 @@ def submit_assignment(assignment_id):
         return redirect(url_for('auth.login'))
     
     user_id = session['user_id']
+    answer = request.form.get('content')
     
     try:
-        assignment_service.submit_assignment(user_id, assignment_id)
+        assignment_service.submit_assignment(user_id, assignment_id, answer)
         flash('作业已提交。', 'success')
     except ValueError as e:
         flash(str(e), 'danger')
     
     return redirect(url_for('course.view_assignment', assignment_id=assignment_id))
+
+@course_bp.route('/assignment/<int:assignment_id>/submission/<int:student_id>', methods=['GET'])
+def view_submission(assignment_id, student_id):
+
+    assignment = assignment_service.get_assignment_by_id(assignment_id)
+    from app.models.user import User
+    from app.models.assignment import StudentAssignment
+    student = User.get_by_id(student_id)
+    submission = StudentAssignment.get(
+        StudentAssignment.student==student,
+        StudentAssignment.assignment==assignment
+    )
+
+    return render_template('course/view_submission.html', 
+                          assignment=assignment, 
+                          student=student,
+                          submission=submission)
+
 
 @course_bp.route('/assignment/<int:assignment_id>/grade/<int:student_id>', methods=['POST'])
 def grade_assignment(assignment_id, student_id):
@@ -228,11 +275,196 @@ def grade_assignment(assignment_id, student_id):
         return redirect(url_for('dashboard.index'))
     
     score = float(request.form.get('score', 0))
+    feedback = request.form.get("feedback")
     
     try:
-        assignment_service.submit_assignment(student_id, assignment_id, score)
+        assignment_service.grade_assignment(student_id, assignment_id, score, feedback)
         flash('评分已保存。', 'success')
     except ValueError as e:
         flash(str(e), 'danger')
     
-    return redirect(url_for('course.view_assignment', assignment_id=assignment_id))
+    return redirect(url_for('course.view_submission', assignment_id=assignment_id, student_id=student_id))
+
+@course_bp.route('/<int:course_id>/knowledge_point/add', methods=['POST'])
+def add_knowledge_point(course_id):
+    """添加新的知识点到课程中"""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    user_id = session['user_id']
+    course = Course.get_by_id(course_id)
+    
+    # 验证权限
+    if course.teacher_id != user_id:
+        flash('只有课程教师可以添加知识点', 'warning')
+        return redirect(url_for('course.view', course_id=course_id))
+    
+    name = request.form.get('name')
+    description = request.form.get('description', '')
+    parent_id = request.form.get('parent_id')
+    
+    # 如果父级ID为空字符串，则设为None
+    if parent_id == '':
+        parent_id = None
+    elif parent_id:
+        parent_id = int(parent_id)
+    
+    try:
+        knowledge_point = knowledge_point_service.create_knowledge_point(
+            name=name,
+            course_id=course_id,
+            description=description,
+            parent_id=parent_id
+        )
+        flash(f'知识点 "{name}" 创建成功!', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    
+    return redirect(url_for('course.view', course_id=course_id))
+
+@course_bp.route('/<int:course_id>/knowledge_point/edit', methods=['POST'])
+def edit_knowledge_point(course_id):
+    """编辑课程中的知识点"""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    user_id = session['user_id']
+    course = Course.get_by_id(course_id)
+    
+    # 验证权限
+    if course.teacher_id != user_id:
+        flash('只有课程教师可以编辑知识点', 'warning')
+        return redirect(url_for('course.view', course_id=course_id))
+    
+    knowledge_point_id = int(request.form.get('knowledge_point_id'))
+    name = request.form.get('name')
+    description = request.form.get('description', '')
+    parent_id = request.form.get('parent_id')
+    
+    # 如果父级ID为空字符串，则设为None
+    if parent_id == '':
+        parent_id = None
+    elif parent_id:
+        parent_id = int(parent_id)
+    
+    try:
+        # 获取知识点实例
+        knowledge_point = knowledge_point_service.get_knowledge_point(knowledge_point_id)
+        
+        # 检查知识点是否属于当前课程
+        if knowledge_point.course_id != course_id:
+            raise ValueError('该知识点不属于当前课程')
+        
+        # 防止循环引用
+        if parent_id and parent_id == knowledge_point_id:
+            raise ValueError('知识点不能以自己作为父级')
+        
+        # 更新知识点
+        knowledge_point.name = name
+        knowledge_point.description = description
+        knowledge_point.parent_id = parent_id
+        knowledge_point.save()
+        
+        flash(f'知识点 "{name}" 更新成功!', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    
+    return redirect(url_for('course.view', course_id=course_id))
+
+@course_bp.route('/<int:course_id>/knowledge_point/delete', methods=['POST'])
+def delete_knowledge_point(course_id):
+    """删除课程中的知识点"""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    user_id = session['user_id']
+    course = Course.get_by_id(course_id)
+    
+    # 验证权限
+    if course.teacher_id != user_id:
+        flash('只有课程教师可以删除知识点', 'warning')
+        return redirect(url_for('course.view', course_id=course_id))
+    
+    knowledge_point_id = int(request.form.get('knowledge_point_id'))
+    
+    try:
+        # 获取知识点实例
+        from app.models.learning_data import KnowledgePoint
+        knowledge_point = knowledge_point_service.get_knowledge_point(knowledge_point_id)
+        
+        # 检查知识点是否属于当前课程
+        if knowledge_point.course_id != course_id:
+            raise ValueError('该知识点不属于当前课程')
+        
+        # 检查是否有子知识点
+        children = KnowledgePoint.select().where(KnowledgePoint.parent_id == knowledge_point_id)
+        if children.count() > 0:
+            raise ValueError('该知识点有子知识点，请先删除或重新分配子知识点')
+        
+        # 保存名称以供通知
+        kp_name = knowledge_point.name
+        
+        # 删除知识点
+        knowledge_point.delete_instance()
+        
+        flash(f'知识点 "{kp_name}" 已删除', 'success')
+    except ValueError as e:
+        flash(str(e), 'danger')
+    
+    return redirect(url_for('course.view', course_id=course_id))
+
+@course_bp.route('/assignment/<int:assignment_id>/knowledge_points', methods=['GET', 'POST'])
+def assignment_knowledge_points(assignment_id):
+    """管理作业关联的知识点"""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    from app.models.assignment import Assignment
+    
+    assignment = Assignment.get_by_id(assignment_id)
+    course_id = assignment.course_id
+    user_id = session['user_id']
+    
+    # 验证权限
+    if assignment.course.teacher_id != user_id:
+        flash('只有课程教师可以管理作业知识点', 'warning')
+        return redirect(url_for('course.view_assignment', assignment_id=assignment_id))
+    
+    if request.method == 'POST':
+        # 获取提交的知识点ID列表
+        knowledge_point_ids = request.form.getlist('knowledge_point_ids', type=int)
+        
+        # 获取权重
+        weights = {}
+        for kp_id in knowledge_point_ids:
+            weight = request.form.get(f'weight_{kp_id}', 1.0, type=float)
+            weights[kp_id] = weight
+        
+        try:
+            # 清除旧的关联并添加新的
+            from app.models.learning_data import AssignmentKnowledgePoint
+            AssignmentKnowledgePoint.delete().where(
+                AssignmentKnowledgePoint.assignment_id == assignment_id
+            ).execute()
+            
+            if knowledge_point_ids:
+                knowledge_point_service.add_knowledge_points_to_assignment(
+                    assignment_id, knowledge_point_ids, weights
+                )
+            
+            flash('作业知识点关联已更新', 'success')
+        except ValueError as e:
+            flash(str(e), 'danger')
+        
+        return redirect(url_for('course.view_assignment', assignment_id=assignment_id))
+    
+    # 获取课程所有知识点
+    course_knowledge_points = knowledge_point_service.get_course_knowledge_points(course_id)
+    
+    # 获取作业已关联的知识点
+    assignment_knowledge_points = knowledge_point_service.get_assignment_knowledge_points(assignment_id)
+    
+    return render_template('course/assignment_knowledge_points.html',
+                          assignment=assignment,
+                          course_knowledge_points=course_knowledge_points,
+                          assignment_knowledge_points=assignment_knowledge_points)

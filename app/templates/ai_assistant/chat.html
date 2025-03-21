@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}AI助手 - 教学分析助手{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 200px);
+        display: flex;
+    }
+    
+    .chat-sidebar {
+        width: 260px;
+        border-right: 1px solid #e0e0e0;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+    }
+    
+    .chat-main {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .chat-input-container {
+        padding: 15px;
+        border-top: 1px solid #e0e0e0;
+        background-color: #fff;
+    }
+    
+    .message {
+        max-width: 85%;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        padding: 10px 15px;
+    }
+    
+    .message-user {
+        background-color: #e3f2fd;
+        align-self: flex-end;
+        margin-left: auto;
+    }
+    
+    .message-assistant {
+        background-color: #f5f5f5;
+        align-self: flex-start;
+    }
+    
+    .new-chat-btn {
+        width: 100%;
+        text-align: left;
+        margin-bottom: 10px;
+    }
+    
+    .chat-history-item {
+        padding: 8px 15px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        cursor: pointer;
+    }
+    
+    .chat-history-item:hover {
+        background-color: #e9ecef;
+    }
+    
+    .chat-history-item.active {
+        background-color: #dbe7f0;
+    }
+    
+    .empty-chat-message {
+        text-align: center;
+        margin-top: 50px;
+        color: #6c757d;
+    }
+    
+    .typing-indicator {
+        display: inline-block;
+        margin-left: 5px;
+    }
+    
+    .typing-indicator span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #888;
+        margin-right: 3px;
+        animation: typing 1s infinite ease-in-out;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- 左侧边栏 - 聊天历史 -->
+    <div class="chat-sidebar p-3">
+        <button id="new-chat-btn" class="btn btn-primary new-chat-btn mb-3">
+            <i class="fas fa-plus me-2"></i>新建聊天
+        </button>
+        
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">聊天历史</h6>
+        </div>
+        
+        <div id="chat-history" class="chat-history">
+            {% for chat in chats %}
+            <div class="chat-history-item" data-chat-id="{{ chat.id }}">
+                <i class="fas fa-comment-dots me-2"></i>{{ chat.title }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- 右侧主聊天区域 -->
+    <div class="chat-main">
+        <div id="chat-messages" class="chat-messages">
+            <div class="empty-chat-message" id="empty-chat-message">
+                <h4>AI教学助手</h4>
+                <p>我可以回答您关于教学、课程或学习的任何问题</p>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <form id="chat-form" class="d-flex">
+                <input type="text" id="message-input" class="form-control me-2" placeholder="输入您的问题..." required>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 当前选中的聊天ID
+    let currentChatId = null;
+    
+    // 创建新的聊天并返回Promise
+    function createNewChat() {
+        console.log("Creating new chat...");
+        return fetch('/ai-assistant/chats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Chat created successfully:", data);
+            
+            // 添加到聊天历史
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chat-history-item active';
+            chatItem.dataset.chatId = data.id;
+            chatItem.innerHTML = `<i class="fas fa-comment-dots me-2"></i>${data.title}`;
+            document.getElementById('chat-history').prepend(chatItem);
+            
+            // 更新当前聊天ID
+            currentChatId = data.id;
+            console.log("Current chat ID set to:", currentChatId);
+            
+            // 清空聊天区域
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.innerHTML = '';
+                
+                // 重新添加空消息提示
+                const emptyMessage = document.createElement('div');
+                emptyMessage.id = 'empty-chat-message';
+                emptyMessage.className = 'empty-chat-message';
+                emptyMessage.innerHTML = '<h4>AI教学助手</h4><p>我可以回答您关于教学、课程或学习的任何问题</p>';
+                emptyMessage.style.display = 'block';
+                chatMessages.appendChild(emptyMessage);
+            }
+            
+            // 为新添加的聊天项添加点击事件
+            chatItem.addEventListener('click', function() {
+                selectChat(data.id);
+            });
+            
+            // 更新其他聊天项的选中状态
+            document.querySelectorAll('.chat-history-item').forEach(item => {
+                if (item !== chatItem) {
+                    item.classList.remove('active');
+                }
+            });
+            
+            return data.id;
+        })
+        .catch(error => {
+            console.error('Error creating new chat:', error);
+            return null;
+        });
+    }
+    
+    // 选择一个聊天
+    function selectChat(chatId) {
+        console.log("Selecting chat:", chatId);
+        currentChatId = chatId;
+        
+        // 更新UI状态
+        document.querySelectorAll('.chat-history-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.chatId == chatId) {
+                item.classList.add('active');
+            }
+        });
+        
+        // 加载聊天消息
+        loadChatMessages(chatId);
+    }
+    
+    // 加载聊天消息
+    function loadChatMessages(chatId) {
+        console.log("Loading messages for chat:", chatId);
+        fetch(`/ai-assistant/chats/${chatId}/messages`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(messages => {
+            console.log("Messages loaded:", messages.length);
+            const chatMessages = document.getElementById('chat-messages');
+            
+            if (!chatMessages) {
+                console.error("Chat messages container not found");
+                return;
+            }
+            
+            // 清空聊天区域，但保留empty-chat-message元素
+            chatMessages.innerHTML = '';
+            
+            // 重新添加空消息提示
+            const emptyMessage = document.createElement('div');
+            emptyMessage.id = 'empty-chat-message';
+            emptyMessage.className = 'empty-chat-message';
+            emptyMessage.innerHTML = '<h4>AI教学助手</h4><p>我可以回答您关于教学、课程或学习的任何问题</p>';
+            chatMessages.appendChild(emptyMessage);
+            
+            if (messages.length === 0) {
+                emptyMessage.style.display = 'block';
+            } else {
+                emptyMessage.style.display = 'none';
+                
+                messages.forEach(msg => {
+                    addMessageToUI(msg.role, msg.content);
+                });
+                // 滚动到底部
+                scrollToBottom();
+            }
+        })
+        .catch(error => console.error('Error loading messages:', error));
+    }
+    
+    // 发送消息
+    function sendMessage(message) {
+        // 确保有聊天ID
+        if (!currentChatId) {
+            console.error("无法发送消息: 当前没有选中的聊天");
+            return;
+        }
+        
+        console.log("Sending message to chat:", currentChatId, message);
+        
+        // 立即在UI上显示用户消息
+        addMessageToUI('user', message);
+        
+        // 显示AI正在输入的指示器
+        const typingIndicator = document.createElement('div');
+        typingIndicator.id = 'typing-indicator';
+        typingIndicator.className = 'message message-assistant';
+        typingIndicator.innerHTML = '正在思考<div class="typing-indicator"><span></span><span></span><span></span></div>';
+        document.getElementById('chat-messages').appendChild(typingIndicator);
+        
+        // 滚动到底部
+        scrollToBottom();
+        
+        // 发送到服务器
+        fetch(`/ai-assistant/chats/${currentChatId}/messages`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`服务器错误: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Response received:", data);
+            
+            // 移除输入指示器
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+            
+            // 显示AI回复
+            addMessageToUI('assistant', data.ai_message.content);
+            
+            // 滚动到底部
+            scrollToBottom();
+            
+            // 更新聊天标题
+            const chatItem = document.querySelector(`.chat-history-item[data-chat-id="${currentChatId}"]`);
+            if (chatItem && chatItem.innerText.includes('新会话')) {
+                chatItem.innerHTML = `<i class="fas fa-comment-dots me-2"></i>${data.user_message.content.substring(0, 30)}${data.user_message.content.length > 30 ? '...' : ''}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+            
+            // 显示错误信息
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'message message-assistant';
+            errorMsg.innerText = `发送消息时出错，请重试。错误: ${error.message}`;
+            document.getElementById('chat-messages').appendChild(errorMsg);
+            
+            scrollToBottom();
+        });
+    }
+    
+    // 添加消息到UI
+    function addMessageToUI(role, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message message-${role}`;
+        
+        // 将普通文本中的换行符转换为HTML换行
+        const formattedText = content.replace(/\n/g, '<br>');
+        messageDiv.innerHTML = formattedText;
+        
+        // 添加空值检查，确保元素存在
+        const emptyMessage = document.getElementById('empty-chat-message');
+        if (emptyMessage) {
+            emptyMessage.style.display = 'none';
+        }
+        
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.appendChild(messageDiv);
+        } else {
+            console.error("Chat messages container not found");
+        }
+    }
+    
+    // 滚动聊天窗口到底部
+    function scrollToBottom() {
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', function() {
+        // 新建聊天按钮
+        document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+        
+        // 聊天表单提交
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            if (!input) return;
+            
+            const message = input.value.trim();
+            
+            if (message) {
+                try {
+                    if (!currentChatId) {
+                        // 先创建聊天，然后发送消息
+                        console.log("No current chat, creating new one first");
+                        createNewChat()
+                            .then(chatId => {
+                                if (chatId) {
+                                    console.log("Ready to send message to new chat:", chatId);
+                                    // 确保DOM已更新，再发送消息
+                                    setTimeout(() => {
+                                        if (currentChatId) {
+                                            try {
+                                                sendMessage(message);
+                                            } catch (err) {
+                                                console.error("Error sending message:", err);
+                                                alert("发送消息时出错: " + err.message);
+                                            }
+                                        } else {
+                                            console.error("Failed to set currentChatId after creation");
+                                            alert("创建聊天失败，请刷新页面重试");
+                                        }
+                                    }, 500); // 增加延迟时间
+                                } else {
+                                    console.error("Failed to create new chat");
+                                    alert("创建聊天失败，请刷新页面重试");
+                                }
+                            })
+                            .catch(err => {
+                                console.error("Error in chat creation process:", err);
+                                alert("创建聊天时出错: " + err.message);
+                            });
+                    } else {
+                        sendMessage(message);
+                    }
+                } catch (err) {
+                    console.error("Error in form submission handler:", err);
+                    alert("处理表单时出错: " + err.message);
+                }
+                
+                input.value = '';
+            }
+        });
+        
+        // 为所有聊天历史项添加点击事件
+        document.querySelectorAll('.chat-history-item').forEach(item => {
+            item.addEventListener('click', function() {
+                selectChat(this.dataset.chatId);
+            });
+        });
+        
+        // 如果存在聊天历史，选择第一个
+        const firstChat = document.querySelector('.chat-history-item');
+        if (firstChat) {
+            selectChat(firstChat.dataset.chatId);
+        }
+    });
+</script>
+{% endblock %}
