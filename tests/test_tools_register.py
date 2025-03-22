@@ -1,4 +1,4 @@
-from app.react.tools_register import initialize_services, tools
+from app.react.tools_register import tools
 from app import create_app
 app = create_app()
 

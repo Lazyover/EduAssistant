@@ -21,8 +21,6 @@ from pydantic import Field
 from typing import Union
 from typing import List 
 from typing import Dict 
-from enum import Enum
-from enum import auto
 import json
 
 from playhouse.shortcuts import model_to_dict
@@ -33,47 +31,11 @@ Observation = Union[str, Exception]
 PROMPT_TEMPLATE_PATH = "./data/input/react.txt"
 OUTPUT_TRACE_PATH = "./data/output/trace.txt"
 
-class Name(Enum):
-    """
-    Enumeration for tool names available to the agent.
-    """
-    WIKIPEDIA = auto()
-    GOOGLE = auto()
-    FETCH_PAGE_CONTENT = auto()
-    BOCHA = auto()
-    SQL = auto()
-    NONE = auto()
-    # analytics service
-    GET_STUDENT_KNOWLEDGE_MASTERY = auto()
-    GET_STUDENT_ACTIVITY_SUMMARY = auto()
-    DETECT_LEARNING_ISSUES = auto()
-    # course service
-    GET_ALL_COURSES = auto()
-    GET_COURSES_BY_TEACHER = auto()
-    GET_COURSES_BY_STUDENT = auto()
-    GET_STUDENTS_BY_COURSE = auto()
-    # assignment service
-    GRADE_ASSIGNMENT = auto()
-    GET_STUDENT_ASSIGNMENTS = auto()
-    GET_COURSE_ASSIGNMENTS = auto()
-    # knowledge base service
-    GET_KNOWLEDGE_POINTS = auto()
-    GET_KNOWLEDGE_BASE = auto()
-    # user service
-    GET_USER_INFO = auto()
-    
-    def __str__(self) -> str:
-        """
-        String representation of the tool name.
-        """
-        return self.name.lower()
-
-
 class Choice(BaseModel):
     """
     Represents a choice of tool with a reason for selection.
     """
-    name: Name = Field(..., description="The name of the tool chosen.")
+    name: str = Field(..., description="The name of the tool chosen.")
     reason: str = Field(..., description="The reason for choosing this tool.")
 
 
@@ -90,17 +52,19 @@ class Tool:
     A wrapper class for tools used by the agent, executing a function based on tool type.
     """
 
-    def __init__(self, name: Name, func: Callable[[str], str], description: str):
+    def __init__(self, name: str, func: Callable[[str], str], description: str):
         """
         Initializes a Tool with a name and an associated function.
         
         Args:
-            name (Name): The name of the tool.
+            name (str): The name of the tool.
             func (Callable[[str], str]): The function associated with the tool.
+            description (str): The description of the tool.
         """
         self.name = name
         self.func = func
         self.description = description
+    
     def use(self, query: str) -> Observation:
         """
         Executes the tool's function with the provided query.
@@ -131,7 +95,7 @@ class Agent:
             model (GenerativeModel): The generative model used by the agent.
         """
         self.model = model
-        self.tools: Dict[Name, Tool] = {}
+        self.tools: Dict[str, Tool] = {}
         self.messages: List[Message] = []
         self.query = ""
         self.max_iterations = 20
@@ -147,12 +111,12 @@ class Agent:
         """
         return read_file(PROMPT_TEMPLATE_PATH)
 
-    def register(self, name: Name, func: Callable[[str], str], description: str) -> None:
+    def register(self, name: str, func: Callable[[str], str], description: str) -> None:
         """
         Registers a tool to the agent.
 
         Args:
-            name (Name): The name of the tool.
+            name (str): The name of the tool.
             func (Callable[[str], str]): The function associated with the tool.
         """
         self.tools[name] = Tool(name, func, description)
@@ -202,7 +166,7 @@ class Agent:
             #database_schema=database_schema
         )
 
-        response = self.ask_gemini(prompt)
+        response = self.ask_llm(prompt)
         logger.info(f"Thinking => {response}")
         self.trace("assistant", f"Thought: {response}")
         self.decide(response)
@@ -223,8 +187,8 @@ class Agent:
             
             if "action" in parsed_response:
                 action = parsed_response["action"]
-                tool_name = Name[action["name"].upper()]
-                if tool_name == Name.NONE:
+                tool_name = action["name"]
+                if not tool_name or tool_name == "none":
                     logger.info("No action needed. Proceeding to final answer.")
                     self.think()
                 else:
@@ -243,12 +207,12 @@ class Agent:
             self.trace("assistant", "I encountered an unexpected error. Let me try a different approach.")
             self.think()
 
-    def act(self, tool_name: Name, query: str) -> None:
+    def act(self, tool_name: str, query: str) -> None:
         """
         Executes the specified tool's function on the query and logs the result.
 
         Args:
-            tool_name (Name): The tool to be used.
+            tool_name (str): The tool to be used.
             query (str): The query for the tool.
         """
         tool = self.tools.get(tool_name)
@@ -278,7 +242,7 @@ class Agent:
         self.think()
         return self.messages[-1].content
 
-    def ask_gemini(self, prompt: str) -> str:
+    def ask_llm(self, prompt: str) -> str:
         """
         Queries the generative model with a prompt.
 
@@ -296,7 +260,7 @@ class Agent:
                 "content": prompt
             }
         ])
-        return str(response) if response is not None else "No response from Gemini"
+        return str(response) if response is not None else "No response from LLM"
 
 def run(query: str) -> str:
     """
@@ -308,8 +272,6 @@ def run(query: str) -> str:
     Returns:
         str: The agent's final answer.
     """
-    #gemini = GenerativeModel(config.MODEL_NAME)
-
     agent = Agent(model=None)
     #agent.register(Name.WIKIPEDIA, wiki_search)
     #agent.register(Name.GOOGLE, google_search)
@@ -317,7 +279,7 @@ def run(query: str) -> str:
     #agent.register(Name.BOCHA, bocha_search)
     #agent.register(Name.SQL, sql_select)
     for name, tool in tools.items(): 
-        agent.register(Name[name.upper()], tool['function'], tool['description'])
+        agent.register(name, tool['function'], tool['description'])
     answer = agent.execute(query)
     return answer
 
