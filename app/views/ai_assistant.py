@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from app.models.user import User
 from app.models.chat import Chat, ChatMessage
 from app.services.user_service import UserService
+from app.react.agent import run
 import json
 
 ai_assistant_bp = Blueprint('ai_assistant', __name__, url_prefix='/ai-assistant')
@@ -122,7 +123,7 @@ def send_message(chat_id):
         
         # TODO: 调用AI模型生成回复
         # 这里先模拟一个简单的回复，实际实现中这里会调用AI服务
-        ai_response = "这是一个AI回复的占位符。实际实现中，这里会连接到AI模型服务获取真实回复。"
+        ai_response = run(data['message'])
         
         # 记录AI回复
         ai_message = ChatMessage.create(
@@ -150,4 +151,5 @@ def send_message(chat_id):
             }
         })
     except Exception as e:
+        print(f'处理消息时发生错误: {str(e)}')
         return jsonify({'error': f'处理消息时发生错误: {str(e)}'}), 500

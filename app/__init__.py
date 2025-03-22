@@ -1,6 +1,7 @@
 from flask import Flask
 from app.models.base import db
 from app.config import Config
+from app.react.tools_register import initialize_services
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -12,6 +13,9 @@ def create_app(config_class=Config):
             user=app.config['DATABASE_USER'],
             password=app.config['DATABASE_PASSWORD'],
             port=app.config['DATABASE_PORT'])
+    
+    # 初始化工具
+    initialize_services()
     
     # 注册蓝图
     from app.views.auth import auth_bp

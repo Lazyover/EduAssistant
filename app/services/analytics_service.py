@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from app.models.learning_data import LearningActivity, StudentKnowledgePoint, KnowledgePoint
 from app.models.assignment import StudentAssignment, Assignment
 from app.models.course import Course
+from app.react.tools_register import register_as_tool
 
 class AnalyticsService:
     """学习数据分析服务，处理学习行为数据分析和学习情况评估。
@@ -63,6 +64,7 @@ class AnalyticsService:
         
         return record
     
+    @register_as_tool
     def get_student_knowledge_mastery(self, student_id, course_id=None):
         """获取学生知识点掌握情况。
         
@@ -88,6 +90,7 @@ class AnalyticsService:
             
         return results
     
+    @register_as_tool
     def get_student_activity_summary(self, student_id, course_id=None, days=30):
         """获取学生活动概要。
         
@@ -149,6 +152,7 @@ class AnalyticsService:
             'daily_activities': daily_activities
         }
     
+    @register_as_tool
     def detect_learning_issues(self, student_id, course_id=None, threshold=0.5):
         """检测学习问题，包括低活跃度、低掌握度等。
         

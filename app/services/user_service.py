@@ -1,5 +1,6 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.user import User, Role, UserRole
+from app.react.tools_register import register_as_tool
 
 class UserService:
     """用户服务类，处理用户认证、注册和用户管理。
@@ -90,3 +91,4 @@ class UserService:
         return UserRole.select().join(Role).where(
             (UserRole.user == user) & (Role.name == role_name)
         ).exists()
+

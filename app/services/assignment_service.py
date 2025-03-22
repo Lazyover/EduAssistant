@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 from app.models.assignment import Assignment, StudentAssignment
 from app.models.course import Course, StudentCourse
+from app.react.tools_register import register_as_tool
 
 class AssignmentService:
     """作业服务类，处理作业管理和学生作业提交。
@@ -100,6 +101,7 @@ class AssignmentService:
         student_assignment.save()
         return student_assignment
     
+    @register_as_tool
     def grade_assignment(self, student_id: int, assignment_id: int, score: float, feedback: str = Optional[str]):
         """为作业评分
 
@@ -124,6 +126,7 @@ class AssignmentService:
         student_assignment.save()
         return student_assignment
     
+    @register_as_tool
     def get_student_assignments(self, student_id, course_id=None, completed=None):
         """获取学生的作业列表。
         
@@ -145,6 +148,7 @@ class AssignmentService:
             
         return list(query)
     
+    @register_as_tool
     def get_course_assignments(self, course_id):
         """获取课程的所有作业。
         
