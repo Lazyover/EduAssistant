@@ -9,8 +9,8 @@ class CourseService:
     该服务提供课程相关的所有功能，包括课程创建、修改、删除，
     以及学生与课程之间的关联管理等。
     """
-    
-    def create_course(self, name, code, description, teacher_id):
+    @staticmethod
+    def create_course(name, code, description, teacher_id):
         """创建新课程。
         
         Args:
@@ -36,7 +36,8 @@ class CourseService:
             teacher=teacher
         )
     
-    def enroll_student(self, course_id, student_id):
+    @staticmethod
+    def enroll_student(course_id, student_id):
         """将学生加入课程。
         
         Args:
@@ -68,7 +69,8 @@ class CourseService:
             student_id=student_id
         )
     
-    def unenroll_student(self, course_id, student_id):
+    @staticmethod
+    def unenroll_student(course_id, student_id):
         """将学生从课程删除。
         
         Args:
@@ -88,7 +90,8 @@ class CourseService:
         return student_course.delete_instance()
 
     @register_as_tool
-    def get_all_courses(self):
+    @staticmethod
+    def get_all_courses():
         """获取所有的课程
 
         Returns:
@@ -97,7 +100,8 @@ class CourseService:
         return list(Course.select())
     
     @register_as_tool
-    def get_courses_by_teacher(self, teacher_id):
+    @staticmethod
+    def get_courses_by_teacher(teacher_id):
         """获取教师所教授的所有课程。
         
         Args:
@@ -109,7 +113,8 @@ class CourseService:
         return list(Course.select().where(Course.teacher_id == teacher_id))
     
     @register_as_tool
-    def get_courses_by_student(self, student_id):
+    @staticmethod
+    def get_courses_by_student(student_id):
         """获取学生所参与的所有课程。
         
         Args:
@@ -123,7 +128,8 @@ class CourseService:
                    .where(StudentCourse.student_id == student_id))
     
     @register_as_tool
-    def get_students_by_course(self, course_id):
+    @staticmethod
+    def get_students_by_course(course_id):
         """获取参与课程的所有学生。
         
         Args:

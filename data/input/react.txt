@@ -13,7 +13,7 @@ Available tools: {tools}
 Instructions:
 1. Analyze the query, previous reasoning steps, and observations.
 2. Decide on the next action: use a tool or provide a final answer.
-3. Call the tools with serveral parameters by passing a JSON.
+3. Call the tools by passing a JSON.
 4. Respond in the following JSON format:
 
 If you need to use a tool:

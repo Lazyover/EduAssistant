@@ -195,13 +195,12 @@ class Agent:
             query=self.query, 
             history=self.get_history(),
             tools='\n\n'.join([
-                f"{str(tool.name)}: \n \'\'\'{tool.description}\'\'\'" 
+                f"{str(tool.name)}: \n \'\'\'{tool.description}\n\'\'\'" 
                 for tool in self.tools.values()
                 ]),
             user_info=model_to_dict(User.get_by_id(session.get('user_id', None))) if session.get('user_id', None) else None
             #database_schema=database_schema
         )
-        print("prompt:", prompt)
 
         response = self.ask_gemini(prompt)
         logger.info(f"Thinking => {response}")

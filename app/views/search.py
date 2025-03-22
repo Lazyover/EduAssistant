@@ -5,9 +5,6 @@ from app.services.user_service import UserService
 from app.models.user import User
 
 search_bp = Blueprint('search', __name__, url_prefix='/search')
-knowledge_service = KnowledgeBaseService()
-course_service = CourseService()
-user_service = UserService()
 
 @search_bp.route('/')
 def index():
@@ -25,16 +22,16 @@ def index():
     
     results = []
     if query:
-        results = knowledge_service.search_knowledge(query, course_id)
+        results = KnowledgeBaseService.search_knowledge(query, course_id)
     
     # 获取用户课程，用于筛选
     user_id = session['user_id']
     user = User.get_by_id(user_id)
     
-    if user_service.has_role(user, 'teacher'):
-        courses = course_service.get_courses_by_teacher(user_id)
+    if UserService.has_role(user, 'teacher'):
+        courses = CourseService.get_courses_by_teacher(user_id)
     else:
-        courses = course_service.get_courses_by_student(user_id)
+        courses = CourseService.get_courses_by_student(user_id)
     
     return render_template('search/index.html',
                          query=query,
@@ -60,7 +57,7 @@ def api_search():
     
     results = []
     if query:
-        results = knowledge_service.search_knowledge(query, course_id, limit)
+        results = KnowledgeBaseService.search_knowledge(query, course_id, limit)
         
     # 将结果转换为简单的JSON结构
     simplified_results = []
@@ -85,18 +82,18 @@ def manage_knowledge():
     user = User.get_by_id(user_id)
     
     # 只有教师和管理员可以管理知识库
-    if not (user_service.has_role(user, 'teacher') or user_service.has_role(user, 'admin')):
+    if not (UserService.has_role(user, 'teacher') or UserService.has_role(user, 'admin')):
         flash('您没有权限管理知识库。', 'warning')
         return redirect(url_for('search.index'))
     
     from app.models.knowledge_base import KnowledgeBase
     
-    if user_service.has_role(user, 'admin'):
+    if UserService.has_role(user, 'admin'):
         # 管理员可以看到所有条目
         entries = KnowledgeBase.select()
     else:
         # 教师只能看到自己课程的条目
-        courses = course_service.get_courses_by_teacher(user_id)
+        courses = CourseService.get_courses_by_teacher(user_id)
         course_ids = [course.id for course in courses]
         
         entries = KnowledgeBase.select().where(
@@ -116,13 +113,13 @@ def add_knowledge():
     user = User.get_by_id(user_id)
     
     # 只有教师和管理员可以添加知识库条目
-    if not (user_service.has_role(user, 'teacher') or user_service.has_role(user, 'admin')):
+    if not (UserService.has_role(user, 'teacher') or UserService.has_role(user, 'admin')):
         flash('您没有权限添加知识库条目。', 'warning')
         return redirect(url_for('search.index'))
     
     # 获取教师的课程，用于关联
-    if user_service.has_role(user, 'teacher'):
-        courses = course_service.get_courses_by_teacher(user_id)
+    if UserService.has_role(user, 'teacher'):
+        courses = CourseService.get_courses_by_teacher(user_id)
     else:
         from app.models.course import Course
         courses = Course.select()
@@ -141,7 +138,7 @@ def add_knowledge():
         tags = [tag.strip() for tag in tags if tag.strip()]
         
         try:
-            knowledge_service.add_knowledge(
+            KnowledgeBaseService.add_knowledge(
                 title=title,
                 content=content,
                 course_id=course_id,
@@ -165,7 +162,7 @@ def edit_knowledge(knowledge_id):
     user = User.get_by_id(user_id)
     
     # 权限检查
-    if not (user_service.has_role(user, 'teacher') or user_service.has_role(user, 'admin')):
+    if not (UserService.has_role(user, 'teacher') or UserService.has_role(user, 'admin')):
         flash('您没有权限编辑知识库条目。', 'warning')
         return redirect(url_for('search.index'))
     
@@ -173,8 +170,8 @@ def edit_knowledge(knowledge_id):
     entry = KnowledgeBase.get_by_id(knowledge_id)
     
     # 获取课程列表
-    if user_service.has_role(user, 'teacher'):
-        courses = course_service.get_courses_by_teacher(user_id)
+    if UserService.has_role(user, 'teacher'):
+        courses = CourseService.get_courses_by_teacher(user_id)
         
         # 教师只能编辑自己课程的条目或无课程关联的条目
         if entry.course and entry.course.teacher_id != user_id:
@@ -198,7 +195,7 @@ def edit_knowledge(knowledge_id):
         tags = [tag.strip() for tag in tags if tag.strip()]
         
         try:
-            knowledge_service.update_knowledge(
+            KnowledgeBaseService.update_knowledge(
                 knowledge_id=knowledge_id,
                 title=title,
                 content=content,
@@ -230,7 +227,7 @@ def delete_knowledge(knowledge_id):
     user = User.get_by_id(user_id)
     
     # 权限检查
-    if not (user_service.has_role(user, 'teacher') or user_service.has_role(user, 'admin')):
+    if not (UserService.has_role(user, 'teacher') or UserService.has_role(user, 'admin')):
         flash('您没有权限删除知识库条目。', 'warning')
         return redirect(url_for('search.index'))
     
@@ -238,11 +235,11 @@ def delete_knowledge(knowledge_id):
     entry = KnowledgeBase.get_by_id(knowledge_id)
     
     # 教师只能删除自己课程的条目或无课程关联的条目
-    if user_service.has_role(user, 'teacher') and entry.course and entry.course.teacher_id != user_id:
+    if UserService.has_role(user, 'teacher') and entry.course and entry.course.teacher_id != user_id:
         flash('您没有权限删除该知识库条目。', 'warning')
         return redirect(url_for('search.manage_knowledge'))
     
-    success = knowledge_service.delete_knowledge(knowledge_id)
+    success = KnowledgeBaseService.delete_knowledge(knowledge_id)
     
     if success:
         flash('知识条目已删除。', 'success')

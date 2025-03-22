@@ -12,7 +12,8 @@ class AnalyticsService:
     学习预警和学习趋势分析等。
     """
     
-    def record_learning_activity(self, student_id, course_id, activity_type, 
+    @staticmethod
+    def record_learning_activity(student_id, course_id, activity_type, 
                                 duration=0, knowledge_point_id=None, metadata=None):
         """记录学习活动。
         
@@ -39,7 +40,8 @@ class AnalyticsService:
         leanring_activity.save()
         return leanring_activity
     
-    def update_knowledge_mastery(self, student_id, knowledge_point_id, score_change):
+    @staticmethod
+    def update_knowledge_mastery(student_id, knowledge_point_id, score_change):
         """更新知识点掌握度。
         
         Args:
@@ -65,7 +67,8 @@ class AnalyticsService:
         return record
     
     @register_as_tool
-    def get_student_knowledge_mastery(self, student_id, course_id=None):
+    @staticmethod
+    def get_student_knowledge_mastery(student_id, course_id=None):
         """获取学生知识点掌握情况。
         
         Args:
@@ -91,7 +94,8 @@ class AnalyticsService:
         return results
     
     @register_as_tool
-    def get_student_activity_summary(self, student_id, course_id=None, days=30):
+    @staticmethod
+    def get_student_activity_summary(student_id, course_id=None, days=30):
         """获取学生活动概要。
         
         Args:
@@ -153,7 +157,8 @@ class AnalyticsService:
         }
     
     @register_as_tool
-    def detect_learning_issues(self, student_id, course_id=None, threshold=0.5):
+    @staticmethod
+    def detect_learning_issues(student_id, course_id=None, threshold=0.5):
         """检测学习问题，包括低活跃度、低掌握度等。
         
         Args:
@@ -167,7 +172,7 @@ class AnalyticsService:
         issues = []
         
         # 检查低掌握度知识点
-        mastery_data = self.get_student_knowledge_mastery(student_id, course_id)
+        mastery_data = AnalyticsService.get_student_knowledge_mastery(student_id, course_id)
         low_mastery_points = [
             {'id': point_id, 'name': data['knowledge_point_name'], 'level': data['mastery_level']}
             for point_id, data in mastery_data.items()
@@ -210,7 +215,7 @@ class AnalyticsService:
             })
             
         # 检查低活跃度
-        activity_summary = self.get_student_activity_summary(student_id, course_id, days=7)
+        activity_summary = AnalyticsService.get_student_activity_summary(student_id, course_id, days=7)
         if activity_summary['total_activities'] == 0:
             issues.append({
                 'type': 'inactive',

@@ -20,83 +20,33 @@ class ToolExecutionError(Exception):
 # Tool registry
 tools = {}
 
-service_registry = {}
-
-def register_service(name: str, service_instance: Any) -> None:
-    """Register a service instance with a name.
+def create_tool_executor(func: Callable) -> Callable:
+    """Create a function that executes a service method with JSON/Dict parameters.
     
     Args:
-        name: The name to register the service under
-        service_instance: The service instance to register
-    """
-    service_registry[name] = service_instance
-    print(f"Registered service instance: {name}")
-
-def create_tool_executor(service_name: str, method_name: str) -> Callable:
-    """Create a function that executes a service method with JSON parameters.
-    
-    Args:
-        service_name: The name of the service in the registry
-        method_name: The name of the method to call on the service
+        func: The function to execute
         
     Returns:
-        A function that accepts JSON and calls the service method
+        A function that accepts JSON/Dict and calls the service method
+    
+    Raises:
+        ToolExecutionError: If the function raises an exception
     """
-    def executor(json_params: Dict[str, Any]) -> Any:
-        # Get the service instance
-        if service_name not in service_registry:
-            raise ToolExecutionError(f"Service '{service_name}' not registered")
-            
-        service = service_registry[service_name]
-        
-        # Get the method
-        if not hasattr(service, method_name):
-            raise ToolExecutionError(f"Method '{method_name}' not found on service '{service_name}'")
-            
-        method = getattr(service, method_name)
-        
-        # Get parameter information
-        sig = inspect.signature(method)
-        type_hints = get_type_hints(method)
-        
-        # Prepare parameters
-        kwargs = {}
-        
-        for param_name, param in sig.parameters.items():
-            # Skip 'self' parameter
-            if param_name == 'self':
-                continue
-                
-            # Check if parameter is in the JSON
-            if param_name in json_params:
-                param_value = json_params[param_name]
-                kwargs[param_name] = param_value
-
-                # temporarily disable type checking
-                '''# Get the expected type
-                param_type = type_hints.get(param_name, Any)
-                
-                # Convert the value to the expected type
-                try:
-                    converted_value = convert_param_value(param_value, param_type)
-                    kwargs[param_name] = converted_value
-                except ValueError as e:
-                    raise ToolExecutionError(f"Invalid parameter '{param_name}': {str(e)}")'''
-            elif param.default == inspect.Parameter.empty:
-                # Required parameter missing
-                raise ToolExecutionError(f"Required parameter '{param_name}' missing")
-        
+    def executor(params: Dict[str, Any]) -> Any:
         # Call the method
         try:
-            results = method(**kwargs)
+            results = func(**params)
+            # 如果返回的是BaseModel，则转换为字典
             if isinstance(results, BaseModel):
                 return model_to_dict(results)
+            # 如果返回的是列表，则转换为字典列表
             elif isinstance(results, list):
                 return [model_to_dict(result) for result in results]
+            # 如果返回的是其他类型，则直接返回
             return results
         except Exception as e:
-            logger.exception(f"Error executing {service_name}.{method_name}")
-            raise ToolExecutionError(f"Error executing {service_name}.{method_name}: {str(e)}", original_error=e)
+            logger.exception(f"Error executing {func.__name__}")
+            raise ToolExecutionError(f"Error executing {func.__name__}: {str(e)}", original_error=e)
     
     return executor
 
@@ -112,13 +62,12 @@ def register_as_tool(func):
     signature = inspect.signature(func)
     docstring = inspect.getdoc(func) or ""
     
-    # Get the service name from the function's module
-    service_name = func.__module__.split('.')[-1]
-    print("service_name", service_name)
+    # Get the actual function from staticmethod
+    actual_func = func.__func__ if isinstance(func, staticmethod) else func
+
     # Register the tool with metadata
-    print(f"registering tool {func.__name__} from service {service_name}")
     tools[func.__name__] = {
-        "function": create_tool_executor(service_name, func.__name__),
+        "function": create_tool_executor(actual_func),
         "description": docstring,
         "parameters": {
             name: {
@@ -128,7 +77,7 @@ def register_as_tool(func):
             for name, param in signature.parameters.items() if name != 'self'
         }
     }
-    print("tool registered", func.__name__)
+    logger.info(f"tool registered: {func.__name__}")
     return wrapper
 
 # Apply to your service methods
@@ -144,18 +93,6 @@ def get_product(product_id: int):
     """
     # Implementation
     return {"id": product_id, "name": "Example Product", "price": 99.99}'''
-
-# Now you can use the registered tools with your agent
-def format_tools_for_agent():
-    """Convert the registered tools into a format suitable for the agent."""
-    return [
-        {
-            "name": name,
-            "description": info["description"],
-            "function": info["function"]
-        }
-        for name, info in tools.items()
-    ]
 
 # Create an initialization function instead of importing at the module level
 def initialize_services():

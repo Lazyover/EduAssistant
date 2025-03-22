@@ -3,7 +3,6 @@ from app.services.user_service import UserService
 from app.models.user import User, Role, UserRole
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
-user_service = UserService()
 
 # 管理员访问权限检查装饰器
 def admin_required(view_func):
@@ -12,7 +11,7 @@ def admin_required(view_func):
             return redirect(url_for('auth.login'))
         
         user = User.get_by_id(session['user_id'])
-        if not user_service.has_role(user, 'admin'):
+        if not UserService.has_role(user, 'admin'):
             flash('您没有管理员权限。', 'danger')
             return redirect(url_for('dashboard.index'))
             
@@ -104,7 +103,7 @@ def initialize_system():
         admin_name = request.form.get('admin_name', 'root')
         
         try:
-            admin_user = user_service.create_user(
+            admin_user = UserService.create_user(
                 username=admin_username,
                 email=admin_email,
                 password=admin_password,

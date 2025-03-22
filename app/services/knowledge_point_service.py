@@ -10,7 +10,8 @@ from typing import List, Dict, Optional
 from peewee import DoesNotExist
 
 class KnowledgePointService:
-    def create_knowledge_point(self, name: str, course_id: int, description: str = None, parent_id: int = None) -> KnowledgePoint:
+    @staticmethod
+    def create_knowledge_point(name: str, course_id: int, description: str = None, parent_id: int = None) -> KnowledgePoint:
         """创建一个新的知识点。
         
         Args:
@@ -51,8 +52,9 @@ class KnowledgePointService:
         
         except DoesNotExist:
             raise ValueError(f"课程ID {course_id} 不存在")
-    
-    def get_knowledge_point(self, knowledge_point_id: int) -> KnowledgePoint:
+
+    @staticmethod
+    def get_knowledge_point(knowledge_point_id: int) -> KnowledgePoint:
         """获取指定ID的知识点。
         
         Args:
@@ -68,8 +70,9 @@ class KnowledgePointService:
             return KnowledgePoint.get_by_id(knowledge_point_id)
         except DoesNotExist:
             raise ValueError(f"知识点ID {knowledge_point_id} 不存在")
-    
-    def get_course_knowledge_points(self, course_id: int, include_tree: bool = False) -> List[KnowledgePoint]:
+
+    @staticmethod
+    def get_course_knowledge_points(course_id: int, include_tree: bool = False) -> List[KnowledgePoint]:
         """获取指定课程的所有知识点。
         
         Args:
@@ -98,9 +101,9 @@ class KnowledgePointService:
                 
         except DoesNotExist:
             raise ValueError(f"课程ID {course_id} 不存在")
-    
+
+    @staticmethod
     def add_knowledge_points_to_assignment(
-        self, 
         assignment_id: int, 
         knowledge_point_ids: List[int],
         weights: Optional[Dict[int, float]] = None
@@ -156,9 +159,9 @@ class KnowledgePointService:
             
         except DoesNotExist:
             raise ValueError(f"作业ID {assignment_id} 不存在")
-    
+
+    @staticmethod
     def add_knowledge_points_to_knowledge_base(
-        self,
         knowledge_base_id: int, 
         knowledge_point_ids: List[int],
         weights: Optional[Dict[int, float]] = None
@@ -214,8 +217,9 @@ class KnowledgePointService:
             
         except DoesNotExist:
             raise ValueError(f"知识库条目ID {knowledge_base_id} 不存在")
-    
-    def remove_knowledge_point_from_assignment(self, assignment_id: int, knowledge_point_id: int) -> bool:
+
+    @staticmethod
+    def remove_knowledge_point_from_assignment(assignment_id: int, knowledge_point_id: int) -> bool:
         """移除作业与知识点的关联。
         
         Args:
@@ -234,8 +238,9 @@ class KnowledgePointService:
             return True
         except DoesNotExist:
             return False
-    
-    def remove_knowledge_point_from_knowledge_base(self, knowledge_base_id: int, knowledge_point_id: int) -> bool:
+
+    @staticmethod
+    def remove_knowledge_point_from_knowledge_base(knowledge_base_id: int, knowledge_point_id: int) -> bool:
         """移除知识库条目与知识点的关联。
         
         Args:
@@ -254,8 +259,9 @@ class KnowledgePointService:
             return True
         except DoesNotExist:
             return False
-    
-    def get_assignment_knowledge_points(self, assignment_id: int) -> List[Dict]:
+
+    @staticmethod
+    def get_assignment_knowledge_points(assignment_id: int) -> List[Dict]:
         """获取作业关联的所有知识点。
         
         Args:
@@ -286,8 +292,9 @@ class KnowledgePointService:
             
         except DoesNotExist:
             raise ValueError(f"作业ID {assignment_id} 不存在")
-    
-    def get_knowledge_base_knowledge_points(self, knowledge_base_id: int) -> List[Dict]:
+
+    @staticmethod
+    def get_knowledge_base_knowledge_points(knowledge_base_id: int) -> List[Dict]:
         """获取知识库条目关联的所有知识点。
         
         Args:

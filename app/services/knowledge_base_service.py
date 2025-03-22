@@ -1,6 +1,5 @@
-import chromadb
 from app.models.knowledge_base import KnowledgeBase
-from app.config import Config
+from app.ext import knowledge_base_collection
 import uuid
 
 class KnowledgeBaseService:
@@ -10,16 +9,8 @@ class KnowledgeBaseService:
     使用ChromaDB进行向量存储和语义检索。
     """
     
-    def __init__(self):
-        """初始化知识库服务, 连接ChromaDB。"""
-        self.client = chromadb.PersistentClient(path=Config.CHROMA_PERSIST_DIRECTORY)
-        # 确保集合存在
-        try:
-            self.collection = self.client.get_collection("knowledge_base")
-        except:
-            self.collection = self.client.create_collection("knowledge_base")
-    
-    def add_knowledge(self, title, content, course_id=None, category=None, tags=None):
+    @staticmethod
+    def add_knowledge(title, content, course_id=None, category=None, tags=None):
         """添加知识条目到知识库。
         
         Args:
@@ -47,7 +38,7 @@ class KnowledgeBaseService:
         knowledge.save()
         
         # 添加到向量数据库
-        self.collection.add(
+        knowledge_base_collection.add(
             ids=[vector_id],
             documents=[content],
             metadatas=[{
@@ -61,7 +52,8 @@ class KnowledgeBaseService:
         
         return knowledge
     
-    def search_knowledge(self, query, course_id=None, limit=5):
+    @staticmethod
+    def search_knowledge(query, course_id=None, limit=5):
         """搜索知识库。
         
         Args:
@@ -73,7 +65,7 @@ class KnowledgeBaseService:
             list: 匹配结果列表
         """
         # 使用ChromaDB搜索
-        search_results = self.collection.query(
+        search_results = knowledge_base_collection.query(
             query_texts=[query],
             n_results=limit
         )
@@ -107,7 +99,8 @@ class KnowledgeBaseService:
                 
         return results
     
-    def delete_knowledge(self, knowledge_id):
+    @staticmethod
+    def delete_knowledge(knowledge_id):
         """删除知识条目。
         
         Args:
@@ -122,7 +115,7 @@ class KnowledgeBaseService:
             
         # 从向量数据库中删除
         try:
-            self.collection.delete(ids=[knowledge.vector_id])
+            knowledge_base_collection.delete(ids=[knowledge.vector_id])
         except:
             pass  # 即使向量删除失败也继续删除数据库记录
             
@@ -130,7 +123,8 @@ class KnowledgeBaseService:
         knowledge.delete_instance()
         return True
     
-    def update_knowledge(self, knowledge_id, title=None, content=None, 
+    @staticmethod
+    def update_knowledge(knowledge_id, title=None, content=None, 
                         category=None, tags=None):
         """更新知识条目。
         
@@ -168,12 +162,12 @@ class KnowledgeBaseService:
             if knowledge.vector_id:
                 try:
                     # 删除旧向量
-                    self.collection.delete(ids=[knowledge.vector_id])
+                    knowledge_base_collection.delete(ids=[knowledge.vector_id])
                 except:
                     pass
                     
                 # 添加新向量
-                self.collection.add(
+                knowledge_base_collection.add(
                     ids=[knowledge.vector_id],
                     documents=[knowledge.content],
                     metadatas=[{

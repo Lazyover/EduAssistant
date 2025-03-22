@@ -1,21 +1,13 @@
 from flask import Flask
-from app.models.base import db
+from app.ext import initialize_extensions
 from app.config import Config
-from app.react.tools_register import initialize_services
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # 初始化数据库
-    db.init(app.config['DATABASE_NAME'],
-            host=app.config['DATABASE_HOST'],
-            user=app.config['DATABASE_USER'],
-            password=app.config['DATABASE_PASSWORD'],
-            port=app.config['DATABASE_PORT'])
-    
-    # 初始化工具
-    initialize_services()
+    # 初始化扩展 (postgres, chroma)
+    initialize_extensions()
     
     # 注册蓝图
     from app.views.auth import auth_bp
@@ -34,5 +26,4 @@ def create_app(config_class=Config):
     app.register_blueprint(search_bp)
     app.register_blueprint(ai_assistant_bp)
     
-    # 创建表
     return app

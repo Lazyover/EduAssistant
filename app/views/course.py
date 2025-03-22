@@ -8,10 +8,6 @@ from app.models.course import Course
 from datetime import datetime
 
 course_bp = Blueprint('course', __name__, url_prefix='/course')
-course_service = CourseService()
-assignment_service = AssignmentService()
-user_service = UserService()
-knowledge_point_service = KnowledgePointService()
 
 @course_bp.route('/')
 def index():
@@ -21,11 +17,10 @@ def index():
     user_id = session['user_id']
     user = User.get_by_id(user_id)
     
-    if user_service.has_role(user, 'teacher'):
-        courses = course_service.get_courses_by_teacher(user_id)
+    if UserService.has_role(user, 'teacher'):
+        courses = CourseService.get_courses_by_teacher(user_id)
     else:
-        #courses = course_service.get_courses_by_student(user_id)
-        courses = course_service.get_all_courses()
+        courses = CourseService.get_all_courses()
         
     return render_template('course/index.html', courses=courses)
 
@@ -37,7 +32,7 @@ def create():
     user_id = session['user_id']
     user = User.get_by_id(user_id)
     
-    if not user_service.has_role(user, 'teacher'):
+    if not UserService.has_role(user, 'teacher'):
         flash('只有教师可以创建课程。', 'warning')
         return redirect(url_for('course.index'))
     
@@ -47,7 +42,7 @@ def create():
         description = request.form.get('description')
         
         try:
-            course = course_service.create_course(
+            course = CourseService.create_course(
                 name=name,
                 code=code,
                 description=description,
@@ -74,7 +69,7 @@ def view(course_id):
     is_student = False
     
     if not is_teacher:
-        student_courses = course_service.get_courses_by_student(user_id)
+        student_courses = CourseService.get_courses_by_student(user_id)
         if course_id in [c.id for c in student_courses]:
             is_student = True
     
@@ -83,20 +78,20 @@ def view(course_id):
         return redirect(url_for('course.index'))'''
     
     # 获取课程作业
-    assignments = assignment_service.get_course_assignments(course_id)
+    assignments = AssignmentService.get_course_assignments(course_id)
     
     # 获取课程知识点
-    knowledge_points = knowledge_point_service.get_course_knowledge_points(course_id)
+    knowledge_points = KnowledgePointService.get_course_knowledge_points(course_id)
     
     # 如果是教师，获取学生列表
     students = None
     if is_teacher:
-        students = course_service.get_students_by_course(course_id)
+        students = CourseService.get_students_by_course(course_id)
     
     # 如果是学生，获取个人作业情况
     student_assignments = None
     if is_student:
-        student_assignments = assignment_service.get_student_assignments(user_id, course_id)
+        student_assignments = AssignmentService.get_student_assignments(user_id, course_id)
     
     return render_template('course/view.html',
                          course=course,
@@ -115,7 +110,7 @@ def enroll(course_id):
     user_id = session['user_id']
     user = User.get_by_id(user_id)
     
-    if not user_service.has_role(user, 'student'):
+    if not UserService.has_role(user, 'student'):
         flash('只有学生可以加入课程。', 'warning')
         return redirect(url_for('course.index'))
     
@@ -123,7 +118,7 @@ def enroll(course_id):
     
     if request.method == 'POST':
         try:
-            course_service.enroll_student(course_id, user_id)
+            CourseService.enroll_student(course_id, user_id)
             flash(f'成功加入课程 "{course.name}"!', 'success')
         except ValueError as e:
             flash(str(e), 'warning')
@@ -140,7 +135,7 @@ def unenroll(course_id):
     # 检查用户是否已加入该课程
     user_id = session['user_id']
     try:
-        if course_service.unenroll_student(course_id, user_id):
+        if CourseService.unenroll_student(course_id, user_id):
             flash(f'您已成功退出课程', 'success')
         else:
             flash(f'退出课程失败', 'warning')
@@ -169,7 +164,7 @@ def create_assignment(course_id):
         due_date = datetime.fromisoformat(request.form.get('due_date'))
         total_points = float(request.form.get('total_points', 100))
         
-        assignment = assignment_service.create_assignment(
+        assignment = AssignmentService.create_assignment(
             title=title,
             description=description,
             course_id=course_id,
@@ -178,7 +173,7 @@ def create_assignment(course_id):
         )
         
         # 自动分配给所有学生
-        assigned_count = assignment_service.assign_to_students(assignment.id)
+        assigned_count = AssignmentService.assign_to_students(assignment.id)
         
         flash(f'作业已创建并分配给{assigned_count}名学生。', 'success')
         return redirect(url_for('course.view', course_id=course_id))
@@ -216,7 +211,7 @@ def view_assignment(assignment_id):
         )
     
     # 获取作业关联的知识点
-    knowledge_points = knowledge_point_service.get_assignment_knowledge_points(assignment_id)
+    knowledge_points = KnowledgePointService.get_assignment_knowledge_points(assignment_id)
     
     return render_template('course/view_assignment.html',
                          assignment=assignment,
@@ -234,7 +229,7 @@ def submit_assignment(assignment_id):
     answer = request.form.get('content')
     
     try:
-        assignment_service.submit_assignment(user_id, assignment_id, answer)
+        AssignmentService.submit_assignment(user_id, assignment_id, answer)
         flash('作业已提交。', 'success')
     except ValueError as e:
         flash(str(e), 'danger')
@@ -244,7 +239,7 @@ def submit_assignment(assignment_id):
 @course_bp.route('/assignment/<int:assignment_id>/submission/<int:student_id>', methods=['GET'])
 def view_submission(assignment_id, student_id):
 
-    assignment = assignment_service.get_assignment_by_id(assignment_id)
+    assignment = AssignmentService.get_assignment_by_id(assignment_id)
     from app.models.user import User
     from app.models.assignment import StudentAssignment
     student = User.get_by_id(student_id)
@@ -278,7 +273,7 @@ def grade_assignment(assignment_id, student_id):
     feedback = request.form.get("feedback")
     
     try:
-        assignment_service.grade_assignment(student_id, assignment_id, score, feedback)
+        AssignmentService.grade_assignment(student_id, assignment_id, score, feedback)
         flash('评分已保存。', 'success')
     except ValueError as e:
         flash(str(e), 'danger')
@@ -310,7 +305,7 @@ def add_knowledge_point(course_id):
         parent_id = int(parent_id)
     
     try:
-        knowledge_point = knowledge_point_service.create_knowledge_point(
+        knowledge_point = KnowledgePointService.create_knowledge_point(
             name=name,
             course_id=course_id,
             description=description,
@@ -349,7 +344,7 @@ def edit_knowledge_point(course_id):
     
     try:
         # 获取知识点实例
-        knowledge_point = knowledge_point_service.get_knowledge_point(knowledge_point_id)
+        knowledge_point = KnowledgePointService.get_knowledge_point(knowledge_point_id)
         
         # 检查知识点是否属于当前课程
         if knowledge_point.course_id != course_id:
@@ -390,7 +385,7 @@ def delete_knowledge_point(course_id):
     try:
         # 获取知识点实例
         from app.models.learning_data import KnowledgePoint
-        knowledge_point = knowledge_point_service.get_knowledge_point(knowledge_point_id)
+        knowledge_point = KnowledgePointService.get_knowledge_point(knowledge_point_id)
         
         # 检查知识点是否属于当前课程
         if knowledge_point.course_id != course_id:
@@ -448,7 +443,7 @@ def assignment_knowledge_points(assignment_id):
             ).execute()
             
             if knowledge_point_ids:
-                knowledge_point_service.add_knowledge_points_to_assignment(
+                KnowledgePointService.add_knowledge_points_to_assignment(
                     assignment_id, knowledge_point_ids, weights
                 )
             
@@ -459,10 +454,10 @@ def assignment_knowledge_points(assignment_id):
         return redirect(url_for('course.view_assignment', assignment_id=assignment_id))
     
     # 获取课程所有知识点
-    course_knowledge_points = knowledge_point_service.get_course_knowledge_points(course_id)
+    course_knowledge_points = KnowledgePointService.get_course_knowledge_points(course_id)
     
     # 获取作业已关联的知识点
-    assignment_knowledge_points = knowledge_point_service.get_assignment_knowledge_points(assignment_id)
+    assignment_knowledge_points = KnowledgePointService.get_assignment_knowledge_points(assignment_id)
     
     return render_template('course/assignment_knowledge_points.html',
                           assignment=assignment,

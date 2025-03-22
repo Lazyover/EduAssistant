@@ -9,7 +9,8 @@ class UserService:
     用户角色分配和管理等操作。
     """
     
-    def create_user(self, username, email, password, name, role_names=None):
+    @staticmethod
+    def create_user(username, email, password, name, role_names=None):
         """创建新用户。
         
         Args:
@@ -50,7 +51,8 @@ class UserService:
         
         return user
     
-    def authenticate_user(self, username, password):
+    @staticmethod
+    def authenticate_user(username, password):
         """验证用户凭证。
         
         Args:
@@ -67,7 +69,8 @@ class UserService:
             
         return None
     
-    def get_user_roles(self, user):
+    @staticmethod
+    def get_user_roles(user):
         """获取用户角色列表。
         
         Args:
@@ -78,7 +81,8 @@ class UserService:
         """
         return [ur.role for ur in user.roles]
     
-    def has_role(self, user, role_name):
+    @staticmethod
+    def has_role(user, role_name):
         """检查用户是否拥有指定角色。
         
         Args:

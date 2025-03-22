@@ -3,7 +3,6 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.services.user_service import UserService
 
 auth_bp = Blueprint('auth', __name__)
-user_service = UserService()
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -11,7 +10,7 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        user = user_service.authenticate_user(username, password)
+        user = UserService.authenticate_user(username, password)
         
         if user:
             session['user_id'] = user.id
@@ -32,7 +31,7 @@ def register():
         name = request.form.get('name')
         
         try:
-            user = user_service.create_user(username, email, password, name, ['student'])
+            user = UserService.create_user(username, email, password, name, ['student'])
             flash('注册成功，请登录。', 'success')
             return redirect(url_for('auth.login'))
         except ValueError as e:

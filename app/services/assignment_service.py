@@ -11,7 +11,8 @@ class AssignmentService:
     评分等功能。
     """
     
-    def create_assignment(self, title, description, course_id, due_date, total_points=100.0):
+    @staticmethod
+    def create_assignment(title, description, course_id, due_date, total_points=100.0):
         """创建新作业。
         
         Args:
@@ -33,7 +34,8 @@ class AssignmentService:
             total_points=total_points
         )
     
-    def get_assignment_by_id(self, assignment_id):
+    @staticmethod
+    def get_assignment_by_id(assignment_id):
         """获取作业详情
         Args:
             assignment_id (int): Assignment对象ID
@@ -46,7 +48,8 @@ class AssignmentService:
         """
         return Assignment.get_by_id(assignment_id)
     
-    def assign_to_students(self, assignment_id):
+    @staticmethod
+    def assign_to_students(assignment_id):
         """将作业分配给所有选课学生。
         
         Args:
@@ -73,7 +76,8 @@ class AssignmentService:
         
         return created
     
-    def submit_assignment(self, student_id, assignment_id, answer):
+    @staticmethod
+    def submit_assignment(student_id, assignment_id, answer):
         """提交或评分作业。
         
         Args:
@@ -102,7 +106,8 @@ class AssignmentService:
         return student_assignment
     
     @register_as_tool
-    def grade_assignment(self, student_id: int, assignment_id: int, score: float, feedback: str = Optional[str]):
+    @staticmethod
+    def grade_assignment(student_id: int, assignment_id: int, score: float, feedback: str = Optional[str]):
         """为作业评分
 
         Args:
@@ -127,7 +132,8 @@ class AssignmentService:
         return student_assignment
     
     @register_as_tool
-    def get_student_assignments(self, student_id, course_id=None, completed=None):
+    @staticmethod
+    def get_student_assignments(student_id, course_id=None, completed=None):
         """获取学生的作业列表。
         
         Args:
@@ -149,7 +155,8 @@ class AssignmentService:
         return list(query)
     
     @register_as_tool
-    def get_course_assignments(self, course_id):
+    @staticmethod
+    def get_course_assignments(course_id):
         """获取课程的所有作业。
         
         Args:

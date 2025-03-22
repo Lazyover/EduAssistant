@@ -5,8 +5,6 @@ from app.models.user import User
 from app.models.course import Course
 
 analytics_bp = Blueprint('analytics', __name__, url_prefix='/analytics')
-analytics_service = AnalyticsService()
-course_service = CourseService()
 
 @analytics_bp.route('/')
 def index():
@@ -26,7 +24,7 @@ def student_analytics(student_id):
     
     # 验证权限：只有学生本人或其教师才能查看
     is_teacher = False
-    student_courses = course_service.get_courses_by_student(student_id)
+    student_courses = CourseService.get_courses_by_student(student_id)
     for course in student_courses:
         if course.teacher_id == user_id:
             is_teacher = True
@@ -36,7 +34,7 @@ def student_analytics(student_id):
         return redirect(url_for('dashboard.index'))
     
     # 获取学生的课程列表
-    courses = course_service.get_courses_by_student(student_id)
+    courses = CourseService.get_courses_by_student(student_id)
     
     # 默认选择第一个课程
     selected_course_id = request.args.get('course_id', None)
@@ -44,19 +42,19 @@ def student_analytics(student_id):
         selected_course_id = courses[0].id
     
     # 获取学习活动摘要
-    activity_summary = analytics_service.get_student_activity_summary(
+    activity_summary = AnalyticsService.get_student_activity_summary(
         student_id, 
         course_id=selected_course_id
     )
     
     # 知识点掌握情况
-    knowledge_mastery = analytics_service.get_student_knowledge_mastery(
+    knowledge_mastery = AnalyticsService.get_student_knowledge_mastery(
         student_id,
         course_id=selected_course_id
     )
     
     # 学习问题检测
-    learning_issues = analytics_service.detect_learning_issues(
+    learning_issues = AnalyticsService.detect_learning_issues(
         student_id,
         course_id=selected_course_id
     )
@@ -82,18 +80,18 @@ def course_analytics(course_id):
         return redirect(url_for('dashboard.index'))
     
     # 获取课程学生
-    students = course_service.get_students_by_course(course_id)
+    students = CourseService.get_students_by_course(course_id)
     
     # 收集所有学生的知识点掌握数据
     student_masteries = {}
     for student in students:
-        mastery = analytics_service.get_student_knowledge_mastery(student.id, course_id)
+        mastery = AnalyticsService.get_student_knowledge_mastery(student.id, course_id)
         student_masteries[student.id] = mastery
     
     # 计算课程活跃度
     course_activity = {}
     for student in students:
-        activity = analytics_service.get_student_activity_summary(student.id, course_id)
+        activity = AnalyticsService.get_student_activity_summary(student.id, course_id)
         course_activity[student.id] = activity
     
     return render_template('analytics/course.html',
@@ -117,7 +115,7 @@ def record_activity():
     metadata = data.get('metadata')
     
     try:
-        analytics_service.record_learning_activity(
+        AnalyticsService.record_learning_activity(
             student_id=student_id,
             course_id=course_id,
             activity_type=activity_type,

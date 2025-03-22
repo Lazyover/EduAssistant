@@ -1,9 +1,7 @@
-from playhouse.postgres_ext import PostgresqlExtDatabase, Model
+from playhouse.postgres_ext import Model
 from peewee import *
 import datetime
-
-# 创建数据库实例
-db = PostgresqlExtDatabase(None)
+from app.ext import db
 
 class BaseModel(Model):
     created_at = DateTimeField(default=datetime.datetime.now())

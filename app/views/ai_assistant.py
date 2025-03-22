@@ -1,12 +1,10 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash
 from app.models.user import User
 from app.models.chat import Chat, ChatMessage
-from app.services.user_service import UserService
 from app.react.agent import run
 import json
 
 ai_assistant_bp = Blueprint('ai_assistant', __name__, url_prefix='/ai-assistant')
-user_service = UserService()
 
 @ai_assistant_bp.route('/chat', methods=['GET'])
 def chat():
