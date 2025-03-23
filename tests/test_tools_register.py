@@ -1,5 +1,5 @@
-from app.react.tools_register import tools
-from app import create_app
+from ..app.react.tools_register import tools
+from ..app import create_app
 app = create_app()
 
 params = {

@@ -13,7 +13,7 @@ from app.utils.logging import logger
 from app.utils.llm.deepseek import chat_deepseek
 #from app.utils.llm.silicon import chat_silicon
 #from app.utils.llm.lm_studio import chat_lm_studio
-from app.react.tools_register import tools
+from app.react.tools_register import student_tools, teacher_tools, admin_tools
 from app.utils.io import read_file
 from pydantic import BaseModel
 from typing import Callable
@@ -22,6 +22,7 @@ from typing import Union
 from typing import List 
 from typing import Dict 
 import json
+from app.services.user_service import UserService
 
 from playhouse.shortcuts import model_to_dict
 from flask import session
@@ -162,9 +163,10 @@ class Agent:
                 f"{str(tool.name)}: \n \'\'\'{tool.description}\n\'\'\'" 
                 for tool in self.tools.values()
                 ]),
-            user_info=model_to_dict(User.get_by_id(session.get('user_id', None))) if session.get('user_id', None) else None
+            user_info=json.dumps(UserService.get_user_info(session.get('user_id')), indent=4)
             #database_schema=database_schema
         )
+        print(prompt)
 
         response = self.ask_llm(prompt)
         logger.info(f"Thinking => {response}")
@@ -195,7 +197,7 @@ class Agent:
                     self.trace("assistant", f"Action: Using {tool_name} tool")
                     self.act(tool_name, action.get("input", self.query))
             elif "answer" in parsed_response:
-                self.trace("assistant", f"Final Answer: {parsed_response['answer']}")
+                self.trace("assistant", f"{parsed_response['answer']}")
             else:
                 raise ValueError("Invalid response format")
         except json.JSONDecodeError as e:
@@ -262,7 +264,7 @@ class Agent:
         ])
         return str(response) if response is not None else "No response from LLM"
 
-def run(query: str) -> str:
+def run(query: str, role: str) -> str:
     """
     Sets up the agent, registers tools, and executes a query.
 
@@ -273,11 +275,9 @@ def run(query: str) -> str:
         str: The agent's final answer.
     """
     agent = Agent(model=None)
-    #agent.register(Name.WIKIPEDIA, wiki_search)
-    #agent.register(Name.GOOGLE, google_search)
-    #agent.register(Name.FETCH_PAGE_CONTENT, fetch_page_content)
-    #agent.register(Name.BOCHA, bocha_search)
-    #agent.register(Name.SQL, sql_select)
+    tools =  student_tools if role == "student" \
+        else teacher_tools if role == "teacher" \
+        else admin_tools
     for name, tool in tools.items(): 
         agent.register(name, tool['function'], tool['description'])
     answer = agent.execute(query)

@@ -9,7 +9,7 @@ from app.utils.logging import logger
 def chat_deepseek(messages):
     try:
         logger.debug("messages:\n", messages[0]['content'])
-        logger.info("Generating response from Gemini")
+        logger.info("Generating response from DeepSeek")
         client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")
 
         response = client.chat.completions.create(

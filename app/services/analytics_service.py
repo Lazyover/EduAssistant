@@ -66,7 +66,7 @@ class AnalyticsService:
         
         return record
     
-    @register_as_tool
+    @register_as_tool(roles=["student", "teacher"])
     @staticmethod
     def get_student_knowledge_mastery(student_id, course_id=None):
         """获取学生知识点掌握情况。
@@ -93,7 +93,7 @@ class AnalyticsService:
             
         return results
     
-    @register_as_tool
+    @register_as_tool(roles=["student", "teacher"])
     @staticmethod
     def get_student_activity_summary(student_id, course_id=None, days=30):
         """获取学生活动概要。
@@ -156,7 +156,7 @@ class AnalyticsService:
             'daily_activities': daily_activities
         }
     
-    @register_as_tool
+    @register_as_tool(roles=["student", "teacher"])
     @staticmethod
     def detect_learning_issues(student_id, course_id=None, threshold=0.5):
         """检测学习问题，包括低活跃度、低掌握度等。

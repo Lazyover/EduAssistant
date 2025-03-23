@@ -96,3 +96,21 @@ class UserService:
             (UserRole.user == user) & (Role.name == role_name)
         ).exists()
 
+    @staticmethod
+    def get_user_info(user_id):
+        """获取用户信息。
+        
+        Args:
+            user_id (int): 用户ID
+        """
+        user = User.get_or_none(User.id == user_id)
+        if user:
+            return {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "name": user.name,
+                "roles": [ur.role.name for ur in user.roles],
+                "is_active": user.is_active
+            }
+        return None

@@ -89,7 +89,7 @@ class CourseService:
         ).get()
         return student_course.delete_instance()
 
-    @register_as_tool
+    @register_as_tool(roles=["student", "teacher"])
     @staticmethod
     def get_all_courses():
         """获取所有的课程
@@ -99,7 +99,7 @@ class CourseService:
         """
         return list(Course.select())
     
-    @register_as_tool
+    @register_as_tool(roles=["teacher"])
     @staticmethod
     def get_courses_by_teacher(teacher_id):
         """获取教师所教授的所有课程。
@@ -112,7 +112,7 @@ class CourseService:
         """
         return list(Course.select().where(Course.teacher_id == teacher_id))
     
-    @register_as_tool
+    @register_as_tool(roles=["student", "teacher"])
     @staticmethod
     def get_courses_by_student(student_id):
         """获取学生所参与的所有课程。
@@ -127,7 +127,7 @@ class CourseService:
                    .join(StudentCourse)
                    .where(StudentCourse.student_id == student_id))
     
-    @register_as_tool
+    @register_as_tool(roles=["teacher"])
     @staticmethod
     def get_students_by_course(course_id):
         """获取参与课程的所有学生。

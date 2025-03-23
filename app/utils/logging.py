@@ -30,7 +30,7 @@ def setup_logger(log_filename="app.log", log_dir="logs"):
     # Define the logging configuration
     logging.setLogRecordFactory(CustomLogRecord)
     logging.basicConfig(
-        level=logging.ERROR,
+        level=logging.INFO,
         format="%(asctime)s [%(levelname)s] [%(module)s] [%(pathname)s]: %(message)s",
         handlers=[
             logging.StreamHandler(),

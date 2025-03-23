@@ -22,7 +22,9 @@ If you need to use a tool:
     "action": {{
         "name": "Tool name (wikipedia, google, or none)",
         "reason": "Explanation of why you chose this tool",
-        "input": "Specific input for the tool, if different from the original query"
+        "input": {{
+            "query": "Specific input for the tool, if different from the original query"
+        }}
     }}
 }}
 

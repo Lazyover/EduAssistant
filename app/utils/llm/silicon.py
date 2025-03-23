@@ -1,18 +1,14 @@
 import requests
-import yaml
-from src.config.logging import logger
+import os
+from app.utils.logging import logger
 
 
 url = "https://api.siliconflow.cn/v1/chat/completions"
-silicon_config_path = '.\\credentials\\silicon.yml'
-with open(silicon_config_path, 'r') as f:
-    silicon_config = yaml.safe_load(f)
-    api_key = silicon_config['api_key']
 
 
-def chat_silicon(messages, model="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"):
+def chat_silicon(messages, model="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"):  # 默认使用DeepSeek-R1-Distill-Qwen-32B模型
     headers = {
-        "Authorization": "Bearer "+api_key,
+        "Authorization": "Bearer "+os.getenv("SILICON_API_KEY"),
         "Content-Type": "application/json"
     }
     payload = {

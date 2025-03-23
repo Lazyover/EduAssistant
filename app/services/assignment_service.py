@@ -105,7 +105,7 @@ class AssignmentService:
         student_assignment.save()
         return student_assignment
     
-    @register_as_tool
+    @register_as_tool(roles=["teacher"])
     @staticmethod
     def grade_assignment(student_id: int, assignment_id: int, score: float, feedback: str = Optional[str]):
         """为作业评分
@@ -131,7 +131,7 @@ class AssignmentService:
         student_assignment.save()
         return student_assignment
     
-    @register_as_tool
+    @register_as_tool(roles=["student", "teacher"])
     @staticmethod
     def get_student_assignments(student_id, course_id=None, completed=None):
         """获取学生的作业列表。
@@ -154,7 +154,7 @@ class AssignmentService:
             
         return list(query)
     
-    @register_as_tool
+    @register_as_tool(roles=["teacher"])
     @staticmethod
     def get_course_assignments(course_id):
         """获取课程的所有作业。

@@ -18,7 +18,9 @@ class ToolExecutionError(Exception):
         super().__init__(self.message)
 
 # Tool registry
-tools = {}
+student_tools = {}
+teacher_tools = {}
+admin_tools = {}
 
 def create_tool_executor(func: Callable) -> Callable:
     """Create a function that executes a service method with JSON/Dict parameters.
@@ -51,13 +53,8 @@ def create_tool_executor(func: Callable) -> Callable:
     return executor
 
 
-def register_as_tool(func):
-    """Register a function as a tool for the ReAct agent."""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    
-    # Extract signature and docstring
+def _register_tool(func: Callable, tools: Dict[str, Any]):
+    """Register a function to the tool registry."""
     signature = inspect.signature(func)
     docstring = inspect.getdoc(func) or ""
     
@@ -76,5 +73,24 @@ def register_as_tool(func):
             for name, param in signature.parameters.items() if name != 'self'
         }
     }
-    logger.info(f"tool registered: {func.__name__}")
-    return wrapper
+
+def register_as_tool(roles: List[str]) -> Callable:
+    """Register a function as a tool for the ReAct agent."""
+    def decorator(func: Callable) -> Callable:
+        
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        
+        if "student" in roles:
+            _register_tool(func, student_tools)
+            logger.info(f"tool registered: {func.__name__} for student")
+        if "teacher" in roles:
+            _register_tool(func, teacher_tools)
+            logger.info(f"tool registered: {func.__name__} for teacher")
+        # admin can use all tools
+        _register_tool(func, admin_tools)
+        
+        return wrapper
+    
+    return decorator

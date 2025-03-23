@@ -2,7 +2,7 @@ import requests
 import json
 
 url = "https://api.bochaai.com/v1/web-search"
-api_key = "sk-67397d9b2a0045f4be625084d3873377"
+api_key = ""
 
 
 def bocha_search(query: str) -> str:

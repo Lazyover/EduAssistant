@@ -119,9 +119,9 @@ def send_message(chat_id):
             content=data['message']
         )
         
-        # TODO: 调用AI模型生成回复
-        # 这里先模拟一个简单的回复，实际实现中这里会调用AI服务
-        ai_response = run(data['message'])
+        # 调用AI模型生成回复
+        # TODO: 选择权限最高的角色
+        ai_response = run(data['message'], user.roles[0].role.name)
         
         # 记录AI回复
         ai_message = ChatMessage.create(
