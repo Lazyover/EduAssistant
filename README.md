@@ -167,7 +167,7 @@ Paper: https://arxiv.org/abs/2210.03629（不用看）
 #### notes:
 1. 如果创建了新的表，记得在你的数据库中添加该表。可以在.\scripts\create_tables.py中的tables列表中添加你新建的表，然后调用db.create_tables(tables)，最后运行该脚本。
 
-2. 如果创建了新的蓝图blueprint，记得在app\\__init__.py中注册该蓝图。
+2. 如果创建了新的蓝图blueprint，记得在app\\\_\_init\_\_.py中注册该蓝图。
 
 3. 实现新功能的时候，都可以考虑将该功能注册给agent使用。注意教师角色和学生角色的权限分别。
 
