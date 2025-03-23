@@ -1,20 +1,20 @@
-from ..app import create_app
+from app import create_app
 
 app = create_app()
 
-from ..app.models.user import *
-from ..app.models.course import *
-from ..app.models.assignment import *
-from ..app.models.learning_data import *
-from ..app.models.knowledge_base import *
-from ..app.models.chat import *
+from app.models.user import *
+from app.models.course import *
+from app.models.assignment import *
+from app.models.learning_data import *
+from app.models.knowledge_base import *
+from app.models.chat import *
 
-from .create_tables import tables
+from scripts.create_tables import tables
 
 db.drop_tables(tables)
 db.create_tables(tables)
 
-from ..app.services.user_service import UserService
+from app.services.user_service import UserService
 
 def initialize_system():
     # 只有在没有任何角色定义时才允许初始化

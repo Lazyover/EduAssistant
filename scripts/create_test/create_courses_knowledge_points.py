@@ -6,11 +6,11 @@ import random
 from peewee import *
 
 # Import models from your existing code
-from ...app.models.user import *
-from ...app.models.course import *
-from ...app.models.assignment import *
-from ...app.models.learning_data import *
-from ...app.models.knowledge_base import *
+from app.models.user import *
+from app.models.course import *
+from app.models.assignment import *
+from app.models.learning_data import *
+from app.models.knowledge_base import *
 
 def setup_database():
     """Connect to the database."""
