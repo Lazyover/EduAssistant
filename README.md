@@ -28,12 +28,13 @@
 
 ## 启动流程
 1. 下载并安装postgreSQL
+
 https://www.postgresql.org/download/
 
 2. 克隆该仓库
 ```bash
-git clone 
-cd 
+git clone https://github.com/1787152643/EduAssistant.git
+cd EduAssistant
 ```
 3. 创建虚拟环境
 ```bash
@@ -46,6 +47,7 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 5. 配置.env文件
+
 创建文件.env, 然后参照.env.example文件进行配置
 
 6. 启动
@@ -64,6 +66,7 @@ python reset_database.py
 ### 应用运行逻辑
 
 请求流程：
+
 浏览器 → Flask路由 → 视图层 → 服务层 → 数据层 → 返回响应
 
 模块说明：
@@ -73,19 +76,23 @@ python reset_database.py
 - react: AI代理核心实现
 - templates: 前端页面模板
 
-从你的浏览器访问localhost:5000时，浏览器会发送请求到后端。Flask会根据注册的蓝图路由到相应的view函数(被@bp.route('\login', methods=['GET'])修饰)。然后该函数调用services（业务逻辑）层，services层再调用models层进行增删改查来完成需要的功能。view也可能直接访问models层。最后view会返回一个render_template()来绘制前端页面。Flask会自动查找templates文件夹中的template，你只需要提供字符串类型的路径。如render_template('course/create_assignment.html', ...)
+从你的浏览器访问localhost:5000时，浏览器会发送请求到后端。Flask会根据注册的蓝图路由到相应的view函数(被@bp.route('\login', methods=['GET'])之类的修饰)。然后该函数调用services（业务逻辑）层，services层再调用models层进行增删改查来完成需要的功能。view也可能直接访问models层。最后view会返回一个render_template()来绘制前端页面。Flask会自动查找templates文件夹中的template，你只需要提供字符串类型的路径。如render_template('course/create_assignment.html', ...)
 
 
 
 ### 应用框架
 Flask: https://flask.palletsprojects.com/en/stable/
+
 Peewee(数据库ORM框架)：https://docs.peewee-orm.com/en/latest/
+
 Chroma(向量数据库)：https://github.com/chroma-core/chroma
 
 ### Agent
 #### 简介
 ReAct 智能体实现一个推理与行动循环，通过迭代的思考、决策和执行周期来处理用户查询。收到查询后，智能体首先结合对话历史和用户上下文分析请求，然后咨询语言模型以确定最佳行动方案。基于这一推理，它会从针对学生、教师或管理员定制的角色专属工具集中选择合适的工具，执行该工具以获取新信息，并将这些观察结果纳入下一轮推理循环——或者在收集到足够的信息后直接给出最终答案。这个循环过程会持续进行，直到智能体生成令人满意的响应或达到最大迭代次数，
+
 Paper: https://arxiv.org/abs/2210.03629（不用看）
+
 参考： https://github.com/arunpshankar/react-from-scratch/tree/main?tab=readme-ov-file
 
 #### 如何将函数注册为Agent可以使用的工具：
@@ -110,25 +117,33 @@ Paper: https://arxiv.org/abs/2210.03629（不用看）
 
 #### notes：
 目前只支持普通的函数和类的静态函数。
+
 如果你需要注册类的静态函数，请将@register_as_tool()放在@staticmethod的上方，如上所示。
 
 ### TODO
 #### 目前可以实现的改进：
   - 使用JWT进行身份认证。（可以先不做）
+
     实现方法：使用PyJWT，编写@token_required修饰器。
 
   - 目前的agent聊天是不考虑历史消息的，可以将历史消息加入，一起传给LLM。
+
     实现方法：
+
     为Agent添加add_history()方法，修改prompt文件.\data\input\react.txt，添加历史消息占位符。聊天时从数据库读取历史消息传入给agent。
 
   - 为课程添加更多功能。如实现教师端课程资源上传，包括文本、视频和PDF等。学生端可以访问这些资源。
+
     实现方法：
+
     1. 在models里添加新表（参考Peewee文档），可以新建文件或者加入在course.py里。
     2. 修改前端页面。
     3. 在services和views里添加相应功能。
 
   - 添加测验功能/完善作业功能。现有的作业只有文本描述和文本回答。可以将作业细分为几个问题，包括选择题、填空题和问答题等。并考虑实现结合agent自动批改。
+
     实现方法：
+
     1. 在models里添加新表，可以新建文件或者加入在assignment.py。
     添加问题表，每个问题存储一个Assignment的外键，表示属于哪个作业。
     添加学生问题回答，每个回答存储一个StudentAssignment的外键，表示属于哪个学生作业。
@@ -136,7 +151,9 @@ Paper: https://arxiv.org/abs/2210.03629（不用看）
     3. 完善services和views的相关功能。
 
   - 完善知识库。现有知识库只有文本知识条目。可以考虑加入文档、FAQ等知识条目类型。
+
     实现方法：
+
     1. 在models的knowledage_base.py里添加新表。
     2. 修改前端页面。
     3. 完善services和views的相关功能。
@@ -144,13 +161,16 @@ Paper: https://arxiv.org/abs/2210.03629（不用看）
 
 #### notes:
 1. 如果创建了新的表，记得在你的数据库中添加该表。可以在.\scripts\create_tables.py中的tables列表中添加你新建的表，然后调用db.create_tables(tables)，最后运行该脚本。
+
 2. 如果创建了新的蓝图blueprint，记得在app\\__init__.py中注册该蓝图。
+
 3. 实现新功能的时候，都可以考虑将该功能注册给agent使用。注意教师角色和学生角色的权限分别。
 
 
 
 
 ### 文件结构说明
+```
 ├── app/
 │   ├── config.py                 配置文件
 │   ├── ext.py                    拓展（主要是数据库）
@@ -189,3 +209,4 @@ Paper: https://arxiv.org/abs/2210.03629（不用看）
 │   └── reset_database.py         删除并创建数据库表，然后生成测试样例数据
 └── tests/
     └── test_tools_register.py
+```
