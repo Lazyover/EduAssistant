@@ -31,6 +31,11 @@
 
 https://www.postgresql.org/download/
 
+然后创建一个数据库
+```bash
+createdb -U postgres eduassistant-v3  # 也可以用别的名字
+```
+
 2. 克隆该仓库
 ```bash
 git clone https://github.com/1787152643/EduAssistant.git
