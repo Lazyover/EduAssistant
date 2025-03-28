@@ -3,6 +3,7 @@ from app.services.course_service import CourseService
 from app.services.assignment_service import AssignmentService
 from app.services.analytics_service import AnalyticsService
 from app.services.user_service import UserService
+from app.services.recommend_service import RecommendService
 from app.models.user import User
 
 dashboard_bp = Blueprint('dashboard', __name__)
