@@ -44,7 +44,8 @@ def google_search(query):
             )
             .execute(http=http)
         )
-    return res.get('items', [])
+    # return res.get('items', [])
+    return res
 
 # def fetch_page_content(url):
 #     try:

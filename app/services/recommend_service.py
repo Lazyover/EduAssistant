@@ -16,11 +16,10 @@ class RecommendService:
             query: query to search
 
         Returns:
-            dict: search results
+            list: search results
         """
-        results = {}
-        with google_search(query) as search:
-            results = search.text
+        results = google_search(query)
+
         return results
 
 
