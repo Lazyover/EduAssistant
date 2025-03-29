@@ -64,7 +64,8 @@ python run.py
 ## 创建测试用例
 1. 运行脚本reset_database.py
 ```bash
-python reset_database.py
+# python reset_database.py
+python -m .scripts.reset_database.py
 ```
 
 ## 开发相关
