@@ -15,3 +15,7 @@ class Config:
     
     # Chroma配置
     CHROMA_PERSIST_DIRECTORY = os.environ.get('CHROMA_PERSIST_DIRECTORY') or 'chroma_db'
+
+    # Google搜索配置
+    GOOGLE_SEARCH_API_KEY = os.environ.get('GOOGLE_SEARCH_API_KEY')
+    GOOGLE_SEARCH_CX = os.environ.get('GOOGLE_SEARCH_CX')
