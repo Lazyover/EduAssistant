@@ -13,16 +13,13 @@ GOOGLE_SEARCH_CX: (fill in your cx id value)
 GOOGLE_SEARCH_API_KEY: (fill in your api key value)
 
 ** 关于Google联网问题 ** 
-如因防火墙问题无法联网，需要配置代理。请根据需要修改proxy变量。
+如因防火墙问题无法联网，需要配置代理。环境变量：GOOGLE_SEARCH_PROXY。
 """
 api_key = Config.GOOGLE_SEARCH_API_KEY
 cx = Config.GOOGLE_SEARCH_CX
-proxy = "http://127.0.0.1:10809"  # V2ray的默认端口，请根据需要修改
+proxy = Config.GOOGLE_SEARCH_PROXY
 
-if proxy:
-    # 设置代理
-    # os.environ["HTTP_PROXY"] = proxy
-    # os.environ["HTTPS_PROXY"] = proxy
+if proxy is not "NO_PROXY":
     # 设置代理和超时时间
     http = httplib2.Http(proxy_info=httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, "127.0.0.1", 10809), timeout=60)
 else:
