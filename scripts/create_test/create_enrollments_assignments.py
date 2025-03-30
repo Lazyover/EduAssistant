@@ -7,11 +7,11 @@ import json
 from peewee import *
 
 # Import models
-from ...app.models.user import *    
-from ...app.models.course import *
-from ...app.models.assignment import *
-from ...app.models.learning_data import *
-from ...app.models.knowledge_base import *
+from app.models.user import *
+from app.models.course import *
+from app.models.assignment import *
+from app.models.learning_data import *
+from app.models.knowledge_base import *
 # Current reference date
 CURRENT_DATE = datetime.datetime(2025, 3, 20, 9, 23, 7)
 
