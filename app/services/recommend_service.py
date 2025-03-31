@@ -4,22 +4,38 @@ from app.react.agent import run
 # 获取推荐的基本提示词
 basic_prompt = '''
     Your final answer should be a json format string which is parsed as a list of resources recommended as follows: 
-    [
-        {
-            "title": "The title of the recommended resource",
-            "reason": "The reason why you recommend this resource",
-            "url": "The url of the recommended resource"
-        }, {
-            ...
-        }, 
-        ... 
-    ]
+    {
+        "recommendations":[
+            {
+                "title":"The title of the recommended resource",
+                "reason":"The reason why you recommend this resource",
+                "url":"The url of the recommended resource"
+            },{
+                ...
+            },
+            ... 
+        ]
+    }
+    Please make sure your result compacts correctly with json standard format. 
+    
     你可以上网搜索，筛选各种类型的推荐资源。
     title和reason部分应该用中文给出。
 '''
 
 class RecommendService:
     # 资源推荐服务类
+
+    # @staticmethod
+    # def format(raw: str) -> str:
+    #     """
+    #     将单引号替换为双引号，以符合json格式
+    #     Args:
+    #         raw:
+    #
+    #     Returns:
+    #
+    #     """
+    #     return raw.replace("'", '"')
 
     @staticmethod
     def get_recommendations_by_history():

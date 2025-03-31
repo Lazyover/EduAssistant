@@ -15,8 +15,8 @@ def index():
 
 @recommend_bp.route('/history', methods=['GET'])
 def recommend_by_history():
-    return jsonify(RecommendService.get_recommendations_by_history())
+    return RecommendService.get_recommendations_by_history()
 
 @recommend_bp.route('/req/<subject>/<chapter>', methods=['GET'])
 def recommend_by_req(subject, chapter):
-    return jsonify(RecommendService.get_recommendations_by_requirement(subject, chapter))
+    return RecommendService.get_recommendations_by_requirement(subject, chapter)
