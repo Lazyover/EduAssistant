@@ -64,7 +64,7 @@ python run.py
 ## 创建测试用例
 1. 在项目的根目录，运行脚本reset_database
 ```bash
-python -m .scripts.reset_database
+python -m scripts.reset_database
 ```
 
 ## 配置Google搜索工具API
