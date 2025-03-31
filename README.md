@@ -62,7 +62,7 @@ python run.py
 打开localhost:5000即可访问
 
 ## 创建测试用例
-1. 运行脚本reset_database.py
+1. 在项目的根目录，运行脚本reset_database
 ```bash
 python -m .scripts.reset_database
 ```
