@@ -62,10 +62,19 @@ python run.py
 打开localhost:5000即可访问
 
 ## 创建测试用例
-1. 运行脚本reset_database.py
+1. 在项目的根目录，运行脚本reset_database
 ```bash
-python reset_database.py
+python -m scripts.reset_database
 ```
+
+## 配置Google搜索工具API
+
+使用Google搜索工具需要在系统环境内手动配置`GOOGLE_SEARCH_API_KEY`和`GOOGLE_SEARCH_CX`两个环境变量。
+
+1. 登录Google开发者平台获取API。详见Google开发者平台：https://developers.google.com/custom-search/v1/introduction?hl=zh-cn
+2. 在系统环境变量新建`GOOGLE_SEARCH_API_KEY`环境变量，填入刚刚申请的api_key。例如`AIzaSyC38a_swZiA5M9R7_idw1ro7p0PXu0****`。
+3. 在系统环境变量新建`GOOGLE_SEARCH_CX`环境变量，您可以在概览页的基本部分找到搜索引擎`ID`，这是`cx`参数。例如：`567cf071779cd****`。
+4. Google由于联网问题可能需要配置本地代理。在系统环境变量新建`GOOGLE_SEARCH_PROXY`变量，填写入http代理的地址。例如：`http://127.0.0.1:10809`。
 
 ## 开发相关
 ### 应用运行逻辑

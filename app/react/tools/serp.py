@@ -10,7 +10,7 @@ import json
 
 
 # Static paths
-CREDENTIALS_PATH = './credentials/key.yml'
+CREDENTIALS_PATH = '../../../credentials/key.yml'
 
 class SerpAPIClient:
     """

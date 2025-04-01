@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}资源推荐{% endblock %}
+
+{% block content %}
+    <div id="status"></div>
+    <div id="recommend-history"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // 渲染到 HTML 页面
+        function renderRecommendations(recommendations, containerId='recommend-history') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // 清空内容
+
+            if(!Array.isArray(recommendations)) recommendations = recommendations["recommendations"]
+            recommendations.forEach(item => {
+                const recommendationElement = document.createElement('div');
+                recommendationElement.innerHTML = `
+                    <h3><a href="${item.url}" target="_blank">${item.title}</a></h3>
+                    <p>${item.reason}</p>
+                `;
+                container.appendChild(recommendationElement);
+            });
+        }
+
+        // 获取知识推荐。如果subject和object中有布尔值为0的参数（如null），则根据历史记录获取推荐。
+        function getRecommendations(subject=null, chapter=null) {
+            const url = (subject && chapter) ? '/recommend/subject/chapter' : '/recommend/history';
+            // 更新status
+            const statusElement = document.getElementById("status");
+            statusElement.textContent = '正在获取资源推荐...';
+
+            fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(res => {
+                // 存入localStorage
+                window.localStorage.setItem("recommend-content", res);
+                // 替换单双引号后解析
+                const recommendations = JSON.parse(res.replaceAll("'", '"'));
+                {#console.log(recommendations)#}
+                // 渲染
+                renderRecommendations(recommendations);
+            })
+            .catch(error => console.error('Error loading recommendations:', error))
+            .finally(()=>statusElement.textContent = '');
+        }
+
+        // 页面打开时自动更新资源推荐
+        window.onload = () => {
+            // 以上次的推荐结果暂时填充
+            const recommendContent = window.localStorage.getItem("recommend-content");
+            renderRecommendations(JSON.parse(recommendContent.replaceAll("'", '"'))["recommendations"]);
+
+            // 上次加载时间
+            const lastLoadTime = window.localStorage.getItem("recommend-load-time");
+            // 现在时间
+            const nowTime = new Date().getTime();
+
+            if (lastLoadTime) {
+                const distance = nowTime - parseInt(lastLoadTime, 10);
+                // 如果时间间隔小于10分钟（600000），则不加载
+                if (distance < 600000) {
+                    console.log("资源推荐已在10分钟内加载过，不自动重复加载");
+                    return;
+                }
+            }
+            // 更新本次加载时间
+            window.localStorage.setItem("recommend-load-time", nowTime.toString());
+            // 触发资源推荐更新的逻辑
+            getRecommendations()
+        }
+    </script>
+{% endblock %}

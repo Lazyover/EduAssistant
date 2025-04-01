@@ -17,6 +17,7 @@ def create_app(config_class=Config):
     from app.views.course import course_bp
     from app.views.search import search_bp
     from app.views.ai_assistant import ai_assistant_bp
+    from app.views.recommend import recommend_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -25,5 +26,6 @@ def create_app(config_class=Config):
     app.register_blueprint(course_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(ai_assistant_bp)
+    app.register_blueprint(recommend_bp)
     
     return app
