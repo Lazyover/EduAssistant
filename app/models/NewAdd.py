@@ -27,6 +27,7 @@ class StudentAnswer(BaseModel):
     commit_answer = TextField()
     earned_score = FloatField()
     work_time = DateTimeField(default=datetime.now)
+    answerImagePath = CharField(max_length=255, null=True)  # 添加图片路径字段，允许为空
 
     class Meta:
         table_name = 'studentanswer'

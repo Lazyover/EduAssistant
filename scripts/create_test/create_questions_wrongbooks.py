@@ -166,8 +166,11 @@ def create_student_answers():
     
     print("\n创建学生答题记录...")
     
-    # 获取所有学生提交的作业
-    student_assignments = list(StudentAssignment.select().where(StudentAssignment.completed == True))
+    # 获取所有已提交的学生作业
+    student_assignments = list(StudentAssignment.select().where(
+        (StudentAssignment.status >= 1) &  # 待批改、已批改或有评语
+        (StudentAssignment.work_time.is_null(False))
+    ))
     
     if not student_assignments:
         print("没有找到学生提交的作业。请先运行create_enrollments_assignments.py。")
@@ -231,7 +234,7 @@ def create_student_answers():
                         earned_score = question.score * random.uniform(0.3, 0.7)
                 
                 # 创建答题时间（在作业提交时间前后30分钟内）
-                work_time = student_assignment.submitted_at + datetime.timedelta(
+                work_time = student_assignment.work_time + datetime.timedelta(
                     minutes=random.randint(-30, 30)
                 )
                 
@@ -263,8 +266,8 @@ def create_feedback():
     
     # 获取所有已完成的学生作业
     student_assignments = list(StudentAssignment.select().where(
-        (StudentAssignment.completed == True) & 
-        (StudentAssignment.score.is_null(False))
+        (StudentAssignment.status >= 2) &  # 已批改或有评语
+        (StudentAssignment.final_score.is_null(False))
     ))
     
     if not student_assignments:
@@ -279,7 +282,7 @@ def create_feedback():
     for student_assignment in student_assignments:
         if random.random() < 0.7:
             # 根据学生作业的得分生成反馈内容
-            score_percentage = student_assignment.score / student_assignment.assignment.total_points
+            score_percentage = student_assignment.final_score / student_assignment.total_score
             
             if score_percentage >= 0.9:
                 comment = random.choice([
@@ -317,28 +320,38 @@ def create_feedback():
                     "需要更认真地对待学习，建议重新复习所有相关材料。"
                 ])
             
-            # 创建反馈时间（在学生提交后1-7天内）
-            created_time = student_assignment.submitted_at + datetime.timedelta(
-                days=random.randint(1, 7),
-                hours=random.randint(0, 23),
-                minutes=random.randint(0, 59)
-            )
+            # 创建时间（在作业提交后1-7天内）
+            if student_assignment.work_time:
+                created_time = student_assignment.work_time + datetime.timedelta(
+                    days=random.randint(1, 7),
+                    hours=random.randint(0, 23),
+                    minutes=random.randint(0, 59)
+                )
+            else:
+                created_time = CURRENT_DATE - datetime.timedelta(
+                    days=random.randint(1, 30),
+                    hours=random.randint(0, 23),
+                    minutes=random.randint(0, 59)
+                )
             
             try:
                 feedback = Feedback.create(
-                    assignment=student_assignment.assignment,
                     student=student_assignment.student,
+                    assignment=student_assignment.assignment,
                     comment=comment,
                     created_time=created_time
                 )
                 
-                print(f"创建教师反馈：{student_assignment.student.name} - {student_assignment.assignment.title}")
+                # 更新学生作业状态为"有评语"
+                student_assignment.status = 3
+                student_assignment.save()
+                
                 feedbacks.append(feedback)
-                    
+                
             except Exception as e:
                 print(f"创建教师反馈时出错：{e}")
     
-    print(f"共创建了 {len(feedbacks)} 条教师反馈。")
+    print(f"创建了 {len(feedbacks)} 条教师反馈。")
     return feedbacks
 
 def create_wrong_books():
