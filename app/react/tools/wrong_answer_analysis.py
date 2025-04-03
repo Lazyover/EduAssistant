@@ -4,10 +4,7 @@ from app.models.learning_data import LearningActivity, StudentKnowledgePoint, Kn
 from app.models.assignment import StudentAssignment, Assignment
 from app.models.course import Course
 from app.models.user import User  # 新增导入
-from app.models.question import Question  # 新增导入
-from app.models.student_answer import StudentAnswer  # 新增导入
-from app.models.wrong_book import WrongBook  # 新增导入
-from app.models.question_wrong_book import QuestionWrongBook  # 新增导入
+from app.models.NewAdd import Question,StudentAnswer,WrongBook,QuestionWrongBook  # 新增导入
 from app.react.tools_register import register_as_tool
 
 def get_wrong_answers(student_id, course_id=None):
