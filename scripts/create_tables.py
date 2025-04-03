@@ -8,6 +8,7 @@ from app.models.knowledge_base import *
 from app.models.chat import *
 from app.models.NewAdd import Question, StudentAnswer, Feedback, WrongBook, QuestionWrongBook
 
+
 from app import create_app
 
 app = create_app()

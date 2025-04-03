@@ -11,6 +11,7 @@ from app.models.chat import *
 # 导入新增模型
 from app.models.NewAdd import Question, StudentAnswer, Feedback, WrongBook, QuestionWrongBook
 
+
 from scripts.create_tables import tables
 
 # 修改这一行，添加cascade=True参数

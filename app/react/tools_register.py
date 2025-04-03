@@ -75,7 +75,11 @@ def _register_tool(func: Callable, tools: Dict[str, Any]):
     }
 
 def register_as_tool(roles: List[str]) -> Callable:
-    """Register a function as a tool for the ReAct agent."""
+    """Register a function as a tool for the ReAct agent.
+
+    Returns:
+        object: 
+    """
     def decorator(func: Callable) -> Callable:
         
         @functools.wraps(func)
