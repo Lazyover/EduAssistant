@@ -14,7 +14,7 @@
     {% endblock %}
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="vh-100 d-flex flex-column">
     <!-- 导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
@@ -98,13 +98,13 @@
     </div>
 
     <!-- 主要内容 -->
-    <main class="container my-4">
+    <main class="{% block main_class %}container my-4{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
     <!-- 页脚 -->
     <footer class="footer mt-auto py-3 bg-light">
-        <div class="container text-center">
+        <div class="container">
             <span class="text-muted">© 2023 教学分析助手</span>
         </div>
     </footer>
