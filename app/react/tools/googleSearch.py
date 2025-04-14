@@ -21,7 +21,7 @@ proxy = Config.GOOGLE_SEARCH_PROXY
 
 if proxy is not "NO_PROXY":
     # 设置代理和超时时间
-    http = httplib2.Http(proxy_info=httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, "127.0.0.1", 10809), timeout=60)
+    http = httplib2.Http(proxy_info=httplib2.ProxyInfo(httplib2.socks.PROXY_TYPE_HTTP, "127.0.0.1", 7890), timeout=60)
 else:
     # 不设置代理
     http = httplib2.Http()
