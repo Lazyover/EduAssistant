@@ -14,7 +14,7 @@ class Question(BaseModel):
     answer = TextField()
     analysis = TextField()
     score = FloatField()
-    status = IntegerField()  # 0:主观题, 1:选择题, 2:判断题, 3:填空题
+    status = IntegerField()  #  1:选择题, 2:判断题, 3:填空题,others主观题,
     created_time = DateTimeField(default=datetime.now)
 
     class Meta:
