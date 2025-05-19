@@ -48,12 +48,14 @@
                             <div class="list-group-item">
                                 <div class="d-flex w-100 justify-content-between">
                                     <h6 class="mb-1">{{ loop.index }}. {{ question.question_name }}</h6>
+                                    <span class="badge bg-secondary">分值: {{ question.score }}</span>
                                     <span class="badge bg-{{ 'success' if question.status == 1 else 'primary' }}">
                                         {{ '选择题' if question.status == 1 
                                         else '判断题' if question.status == 2 
                                         else '简答题' if question.status == 3 
                                         else '主观题'  }}
                                     </span>
+
                                 </div>
                                 <!-- 题目内容 -->
                                 <div class="mt-2">
@@ -89,7 +91,7 @@
                                                     <label class="form-check-label" for="false_{{ question.id }}">错误</label>
                                                 </div>
                                             {% else %}  <!-- 简答题和主观题 -->
-                                                <p class="mb-2">{{ question.contxnt }}</p>
+                                                <p class="mb-2">{{ question.context }}</p>
                                                 <textarea class="form-control" 
                                                         name="question_{{ question.id }}" 
                                                         rows="{{ 3 if question.status == 3 else 5 }}"
@@ -145,16 +147,21 @@
                         <p><strong>截止日期:</strong> {{ assignment.due_date.strftime('%Y-%m-%d %H:%M') }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>总分:</strong> {{ assignment.total_points }}</p>
+                        <p><strong>总分:</strong> <span id="total-points">{{ assignment.total_points }}</span></p>
                     </div>
                 </div>
                 
                 {% if not is_teacher %}
                 <div class="mt-4">
                     <div class="card border-light bg-light">
+                        <form method="post" action="{{ url_for('course.submit_assignment', assignment_id=assignment.id) }}">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">提交作业</button>
+                                </div>
+                            </form>
                         <div class="card-body">
                             <h5>提交状态</h5>
-                            {% if student_assignment %}
+                            {% if student_assignment.answer %}
                                 {% if student_assignment.completed %}
                                 <div class="alert alert-success">
                                     <i class="fas fa-check-circle me-2"></i>您已完成此作业
@@ -170,16 +177,6 @@
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-circle me-2"></i>尚未提交
                             </div>
-                            <form method="post" action="{{ url_for('course.submit_assignment', assignment_id=assignment.id) }}">
-                                <div class="mb-3">
-                                    <label for="assignment_content" class="form-label">作业内容</label>
-                                    <textarea id="assignment_content" name="content" class="form-control" rows="8" required></textarea>
-                                    <small class="text-muted">请在此处输入您的作业内容</small>
-                                </div>
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary">提交作业</button>
-                                </div>
-                            </form>
                             {% endif %}
                         </div>
                     </div>
@@ -272,6 +269,23 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有题目的分值元素
+        const scoreElements = document.querySelectorAll('.badge.bg-secondary');
+        let totalPoints = 0;
+
+        // 遍历所有分值元素并累加
+        scoreElements.forEach((element) => {
+            const scoreText = element.textContent;
+            const score = parseInt(scoreText.replace('分值: ', ''), 10);
+            if (!isNaN(score)) {
+                totalPoints += score;
+            }
+        });
+
+        // 更新总分显示
+        document.getElementById('total-points').textContent = totalPoints;
     });
 </script>
 {% endblock %}

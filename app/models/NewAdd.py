@@ -57,6 +57,7 @@ class QuestionWrongBook(BaseModel):
     wrong_book = ForeignKeyField(WrongBook, backref='question_wrong_books')
     question = ForeignKeyField(Question, backref='wrong_books')
     created_time = DateTimeField(default=datetime.now)
+    student_answer = ForeignKeyField(StudentAnswer, backref='question_wrong')
 
     class Meta:
         table_name = 'questionwrongbook'

@@ -3,6 +3,7 @@ from typing import Optional
 from app.models.assignment import Assignment, StudentAssignment
 from app.models.course import Course, StudentCourse
 from app.react.tools_register import register_as_tool
+from app.models.NewAdd import Question 
 
 class AssignmentService:
     """作业服务类，处理作业管理和学生作业提交。
@@ -99,8 +100,9 @@ class AssignmentService:
         #    raise ValueError("无法找到对应的学生作业记录")
         
         student_assignment.answer = answer
-        student_assignment.submitted_at = datetime.now()
-        student_assignment.attempts += 1
+        student_assignment.work_time = datetime.now()
+        #student_assignment.attempts += 1
+        student_assignment.status = 1
             
         student_assignment.save()
         return student_assignment
@@ -127,20 +129,19 @@ class AssignmentService:
         )
         student_assignment.score = score
         student_assignment.feedback = feedback
-        student_assignment.completed = True
+        #student_assignment.completed = True
         student_assignment.save()
         return student_assignment
     
     @register_as_tool(roles=["student", "teacher"])
     @staticmethod
-    def get_student_assignments(student_id, course_id=None, completed=None):
+    def get_student_assignments(student_id, course_id=None,completed=None):
         """
         获取学生的作业列表，可以按课程和完成状态筛选
         
         Args:
             student_id (int): 学生ID
             course_id (int, optional): 课程ID，用于筛选
-            completed (bool, optional): 完成状态，用于筛选
             
         Returns:
             list: StudentAssignment对象列表
@@ -153,6 +154,7 @@ class AssignmentService:
         
         if course_id:
             query = query.where(Assignment.course_id == course_id)
+            
         
         if completed is not None:
             if completed:
@@ -176,3 +178,5 @@ class AssignmentService:
             list: 作业对象列表
         """
         return list(Assignment.select().where(Assignment.course_id == course_id))
+
+    

@@ -141,8 +141,8 @@ def learning_analyze(question, df_to_be_analyzed):
             .select(Student.name.alias("student_name"), Student.id.alias("student_id"),
                     Course.name.alias("course_name"), Course.code.alias("course_code"), Course.id.alias("course_id"),
                     Assignment.title.alias("assignment_title"), Assignment.id.alias("assignment_id"),
-                    StudentAssignment.score, StudentAssignment.submitted_at, StudentAssignment.attempts,
-                    Assignment.total_points,
+                    StudentAssignment.final_score, StudentAssignment.work_time,
+                    Assignment.total_score,
                     Teacher.name.alias("teacher_name"), Teacher.id.alias("teacher_id"))
             .join(Student)
             .switch(StudentAssignment)

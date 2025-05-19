@@ -132,10 +132,10 @@
                                 {% if is_student %}
                                     {% set student_assignment = student_assignments|selectattr('assignment.id', 'equalto', assignment.id)|first %}
                                     <td>
-                                        {% if student_assignment and student_assignment.completed %}
-                                        <span class="badge bg-success">已完成</span>
-                                        {% elif student_assignment and student_assignment.submitted_at %}
-                                        <span class="badge bg-warning">已提交</span>
+                                        {% if student_assignment and student_assignment.status %}
+                                        <span class="badge bg-success">已提交</span>
+                                        {% elif student_assignment and student_assignment.final_score%}
+                                        <span class="badge bg-warning">已批改</span>
                                         {% else %}
                                         <span class="badge bg-danger">未提交</span>
                                         {% endif %}
