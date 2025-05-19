@@ -132,9 +132,9 @@
                                 {% if is_student %}
                                     {% set student_assignment = student_assignments|selectattr('assignment.id', 'equalto', assignment.id)|first %}
                                     <td>
-                                        {% if student_assignment and student_assignment.status %}
+                                        {% if student_assignment and student_assignment.status==1 %}
                                         <span class="badge bg-success">已提交</span>
-                                        {% elif student_assignment and student_assignment.final_score%}
+                                        {% elif student_assignment and (student_assignment.final_score or student_assignment.status == 2) %}
                                         <span class="badge bg-warning">已批改</span>
                                         {% else %}
                                         <span class="badge bg-danger">未提交</span>

@@ -104,8 +104,11 @@
                                 {% if is_teacher %}
                                 <div class="mt-2">
                                     <small class="text-muted">正确答案: {{ question.answer }}</small>
-                                    <a href="{{ url_for('course.edit_question', question_id=question.id) }}" 
-                                       class="btn btn-sm btn-outline-secondary ms-2">编辑</a>
+                                    {% if question.id %}
+                                        <a href="{{ url_for('course.edit_question', question_id=question.id) }}" class="btn btn-sm btn-outline-secondary ms-2">编辑</a>
+                                    {% else %}
+                                        <span class="text-danger"> </span>
+                                    {% endif %}
                                 </div>
                                 {% endif %}
                             </div>
@@ -198,10 +201,8 @@
                     <div class="list-group-item">
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1">{{ submission.student.name }}</h6>
-                            {% if submission.completed %}
-                            <span class="badge bg-success">已评分</span>
-                            {% elif submission.submitted_at %}
-                            <span class="badge bg-warning">待评分</span>
+                            {% if student_assignment.status==2 or student_assignment.work_time %}
+                            <span class="badge bg-success">已提交</span>
                             {% else %}
                             <span class="badge bg-danger">未提交</span>
                             {% endif %}

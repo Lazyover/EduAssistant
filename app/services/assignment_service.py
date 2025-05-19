@@ -130,6 +130,7 @@ class AssignmentService:
         student_assignment.score = score
         student_assignment.feedback = feedback
         #student_assignment.completed = True
+        student_assignment.status = 2
         student_assignment.save()
         return student_assignment
     

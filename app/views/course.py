@@ -524,7 +524,9 @@ def assignment_knowledge_points(assignment_id):
 @course_bp.route('/assignment/<int:assignment_id>/add-question', methods=['GET', 'POST'])
 def add_question(assignment_id):
     from app.models.assignment import Assignment
+    from app.models.course import Course
     assignment = Assignment.get_by_id(assignment_id)
+    course=assignment.course
     # 验证权限
     user_id = session['user_id']
     if assignment.course.teacher_id != user_id:
@@ -534,9 +536,11 @@ def add_question(assignment_id):
         try:
             question = Question.create(
                 assignment=assignment,
+                course=course,
                 question_name=request.form.get('name'),
-                content=request.form.get('content'),
+                context=request.form.get('context'),
                 answer=request.form.get('answer'),
+                analysis=request.form.get('analysis'),
                 score=float(request.form.get('score', 10.0)),
                 status=int(request.form.get('type', 0))
             )
@@ -548,20 +552,19 @@ def add_question(assignment_id):
     return render_template('course/add_question.html', assignment=assignment)
 
 @course_bp.route('/question/<int:question_id>/edit', methods=['GET', 'POST'])
-def edit_question(question_id,assignment_id):
-    from app.models.assignment import Assignment
-    assignment = Assignment.get_by_id(assignment_id)
+def edit_question(question_id):
+
     question = Question.get_by_id(question_id)
     user_id = session['user_id']
     # 验证权限
-    if assignment.course.teacher_id != user_id:
+    if question.assignment.course.teacher_id != user_id:
         flash('只有课程教师可以更新题目', 'warning')
-        return redirect(url_for('course.view_assignment', assignment_id=assignment_id))
+        return redirect(url_for('course.view_assignment', assignment_id=question.assignment_id))
     
     if request.method == 'POST':
         try:
             question.question_name = request.form.get('name')
-            question.content = request.form.get('content')
+            question.context = request.form.get('context')
             question.answer = request.form.get('answer')
             question.score = float(request.form.get('score'))
             question.status = int(request.form.get('type'))

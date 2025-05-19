@@ -10,8 +10,8 @@ class Question(BaseModel):
     question_name = CharField(max_length=255)
     assignment = ForeignKeyField(Assignment, backref='questions')
     course = ForeignKeyField(Course, backref='questions')
-    context = TextField()
-    answer = TextField()
+    context = TextField(null=False)
+    answer = TextField(null=False)
     analysis = TextField()
     score = FloatField()
     status = IntegerField()  #  1:选择题, 2:判断题, 3:填空题,others主观题,
